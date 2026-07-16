@@ -8,12 +8,14 @@ from typing import Optional
 import pandas as pd
 
 try:
+    from .analysis import build_ev_sensitivity, build_leverage_summary, build_validation_summary, default_ev_grid
     from .calculate import calculate_crv
     from .events import filter_challenge_events
     from .ingestion import fetch_2026_statcast_data
     from .re288 import load_re288_matrix, map_re288
     from .realities import generate_alternate_realities
 except ImportError:  # pragma: no cover - allows running as script from repo root
+    from analysis import build_ev_sensitivity, build_leverage_summary, build_validation_summary, default_ev_grid
     from calculate import calculate_crv
     from events import filter_challenge_events
     from ingestion import fetch_2026_statcast_data
@@ -145,6 +147,82 @@ def _write_pipeline_diagram(out_path: Path) -> None:
     out_path.write_text(svg, encoding="utf-8")
 
 
+def _write_sensitivity_svg(df: pd.DataFrame, out_path: Path, title: str) -> None:
+    width = 900
+    height = 500
+    margin = 60
+    if df.empty:
+        out_path.write_text(
+            "<svg xmlns='http://www.w3.org/2000/svg' width='900' height='200'><text x='20' y='40'>No sensitivity data available.</text></svg>",
+            encoding="utf-8",
+        )
+        return
+
+    x_vals = pd.to_numeric(df["ev_c"], errors="coerce").fillna(0.0)
+    y_vals = pd.to_numeric(df["sum_cRV"], errors="coerce").fillna(0.0)
+    x_min, x_max = float(x_vals.min()), float(x_vals.max())
+    y_min, y_max = float(y_vals.min()), float(y_vals.max())
+    x_span = max(x_max - x_min, 1e-6)
+    y_span = max(y_max - y_min, 1e-6)
+
+    def sx(x: float) -> float:
+        return margin + ((x - x_min) / x_span) * (width - 2 * margin)
+
+    def sy(y: float) -> float:
+        return height - margin - ((y - y_min) / y_span) * (height - 2 * margin)
+
+    points = " ".join(f"{sx(float(x)):.2f},{sy(float(y)):.2f}" for x, y in zip(x_vals, y_vals))
+    lines = [
+        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}'>",
+        "<style>text{font-family:Arial,sans-serif;font-size:13px}.title{font-size:18px;font-weight:bold}</style>",
+        f"<text class='title' x='{margin}' y='30'>{title}</text>",
+        f"<line x1='{margin}' y1='{height-margin}' x2='{width-margin}' y2='{height-margin}' stroke='black'/>",
+        f"<line x1='{margin}' y1='{margin}' x2='{margin}' y2='{height-margin}' stroke='black'/>",
+        f"<polyline points='{points}' fill='none' stroke='#2563eb' stroke-width='3'/>",
+    ]
+    for x, y in zip(x_vals, y_vals):
+        lines.append(f"<circle cx='{sx(float(x)):.2f}' cy='{sy(float(y)):.2f}' r='4' fill='#2563eb'/>")
+        lines.append(f"<text x='{sx(float(x)) - 8:.2f}' y='{height-margin+20:.2f}'>{float(x):.2f}</text>")
+        lines.append(f"<text x='{sx(float(x)) + 6:.2f}' y='{sy(float(y)) - 8:.2f}'>{float(y):.3f}</text>")
+    lines.append(f"<text x='{width/2 - 30:.2f}' y='{height-12}'>EV_c</text>")
+    lines.append(f"<text x='8' y='{height/2:.2f}' transform='rotate(-90 8,{height/2:.2f})'>Total cRV</text>")
+    lines.append("</svg>")
+    out_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_latex_table(df: pd.DataFrame, out_path: Path, caption: str, label: str) -> None:
+    if df.empty:
+        out_path.write_text("% no data\n", encoding="utf-8")
+        return
+
+    cols = list(df.columns)
+    if len(cols) > 1:
+        fmt = "l" + "r" * (len(cols) - 2) + "l"
+    else:
+        fmt = "l"
+    lines = [
+        "\\begin{table}[h]",
+        "\\centering",
+        f"\\caption{{{caption}}}",
+        f"\\label{{{label}}}",
+        f"\\begin{{tabular}}{{{fmt}}}",
+        "\\toprule",
+        " & ".join(cols).replace("_", "\\_") + " \\\\",
+        "\\midrule",
+    ]
+    for _, row in df.iterrows():
+        vals = []
+        for c in cols:
+            v = row[c]
+            if isinstance(v, float):
+                vals.append(f"{v:.3f}")
+            else:
+                vals.append(str(v))
+        lines.append(" & ".join(vals).replace("_", "\\_") + " \\\\")
+    lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}"])
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def run_experiment(
     output_dir: Path,
     start_date: Optional[str] = None,
@@ -154,6 +232,8 @@ def run_experiment(
     output_dir.mkdir(parents=True, exist_ok=True)
     figures_dir = output_dir / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
+    tables_dir = output_dir / "tables"
+    tables_dir.mkdir(parents=True, exist_ok=True)
 
     raw = fetch_2026_statcast_data(start_date=start_date, end_date=end_date)
     if raw.empty:
@@ -188,6 +268,15 @@ def run_experiment(
     )
     challenger_summary.to_csv(output_dir / "challenger_summary.csv", index=False)
 
+    validation_summary = build_validation_summary(scored, n_boot=1000)
+    validation_summary.to_csv(output_dir / "validation_summary.csv", index=False)
+
+    leverage_summary = build_leverage_summary(scored)
+    leverage_summary.to_csv(output_dir / "leverage_summary.csv", index=False)
+
+    ev_sensitivity = build_ev_sensitivity(scored, ev_values=default_ev_grid())
+    ev_sensitivity.to_csv(output_dir / "ev_sensitivity.csv", index=False)
+
     _write_simple_bar_svg(
         leaderboard,
         value_col="cumulative_cRV",
@@ -203,6 +292,23 @@ def run_experiment(
         title="cRV by Challenger Type",
     )
     _write_pipeline_diagram(figures_dir / "pipeline_diagram.svg")
+    _write_sensitivity_svg(
+        ev_sensitivity,
+        out_path=figures_dir / "ev_sensitivity.svg",
+        title="Sensitivity of Total cRV to EV_c",
+    )
+    _write_latex_table(
+        leaderboard.head(10),
+        out_path=tables_dir / "leaderboard_top10.tex",
+        caption="Top 10 player-level cumulative cRV values.",
+        label="tab:leaderboard",
+    )
+    _write_latex_table(
+        validation_summary,
+        out_path=tables_dir / "validation_summary.tex",
+        caption="Validation summary metrics for the current run.",
+        label="tab:validation",
+    )
 
 
 def main() -> None:

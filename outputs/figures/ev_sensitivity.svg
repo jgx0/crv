@@ -1,0 +1,27 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='500'>
+<style>text{font-family:Arial,sans-serif;font-size:13px}.title{font-size:18px;font-weight:bold}</style>
+<text class='title' x='60' y='30'>Sensitivity of Total cRV to EV_c</text>
+<line x1='60' y1='440' x2='840' y2='440' stroke='black'/>
+<line x1='60' y1='60' x2='60' y2='440' stroke='black'/>
+<polyline points='60.00,60.00 216.00,136.00 372.00,212.00 528.00,288.00 684.00,364.00 840.00,440.00' fill='none' stroke='#2563eb' stroke-width='3'/>
+<circle cx='60.00' cy='60.00' r='4' fill='#2563eb'/>
+<text x='52.00' y='460.00'>0.05</text>
+<text x='66.00' y='52.00'>0.020</text>
+<circle cx='216.00' cy='136.00' r='4' fill='#2563eb'/>
+<text x='208.00' y='460.00'>0.10</text>
+<text x='222.00' y='128.00'>-0.030</text>
+<circle cx='372.00' cy='212.00' r='4' fill='#2563eb'/>
+<text x='364.00' y='460.00'>0.15</text>
+<text x='378.00' y='204.00'>-0.080</text>
+<circle cx='528.00' cy='288.00' r='4' fill='#2563eb'/>
+<text x='520.00' y='460.00'>0.20</text>
+<text x='534.00' y='280.00'>-0.130</text>
+<circle cx='684.00' cy='364.00' r='4' fill='#2563eb'/>
+<text x='676.00' y='460.00'>0.25</text>
+<text x='690.00' y='356.00'>-0.180</text>
+<circle cx='840.00' cy='440.00' r='4' fill='#2563eb'/>
+<text x='832.00' y='460.00'>0.30</text>
+<text x='846.00' y='432.00'>-0.230</text>
+<text x='420.00' y='488'>EV_c</text>
+<text x='8' y='250.00' transform='rotate(-90 8,250.00)'>Total cRV</text>
+</svg>
