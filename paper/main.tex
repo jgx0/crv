@@ -1,0 +1,87 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\title{Challenge Run Value ($cRV$): Quantifying Strategic Value in MLB's ABS Challenge Era}
+\author{Working Draft}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We introduce Challenge Run Value ($cRV$), a pitch-level metric for valuing Automated Ball-Strike (ABS) challenges in Major League Baseball. The model combines run expectancy deltas from count-state changes with a decaying opportunity-cost penalty for failed challenges. We implement a reproducible pipeline covering ingestion, challenge event isolation, alternate-state generation, RE288 mapping, and final scoring. Initial experimental outputs in this repository are generated with an executable workflow and include leaderboards, challenger-level summaries, and publication-ready diagrams. Current results are an implementation baseline and demonstrate end-to-end feasibility; full-season empirical estimates and formal uncertainty analysis remain ongoing.
+\end{abstract}
+
+\section{Introduction}
+MLB's ABS challenge system changes pitch evaluation from a framing-only paradigm toward constrained strategic resource management. Existing catcher value frameworks emphasize receiving effects and called-strike manipulation \cite{marchi2013,mlbframing}. In contrast, ABS challenge value depends on whether a scarce challenge is deployed at the right time and converted successfully.
+
+This paper formalizes that value with $cRV$, a run-based framework grounded in run expectancy and game-state opportunity cost.
+
+\section{Related Work}
+Count-dependent run expectancy is foundational in sabermetric modeling \cite{tango2007}. Public resources have extended this through pitch-level and state-transition analysis \cite{baseballprospectusre}. Prior catcher receiving research and framing-era work established that called-strike environments are measurable and strategically relevant \cite{marchi2013,fast2011,mlbframing}. Broader evidence of umpiring-context effects in sport motivates explicit treatment of decision systems and incentives \cite{scorecasting}. Emerging ABS reporting has focused on descriptive outcomes, but not on a unified challenge valuation metric \cite{mlbabs2024}.
+
+\section{Methodology}
+For each challenge event $i$, define
+\begin{align}
+\Delta RV_{pitch,i} &=
+\begin{cases}
+RE(\text{overturned}) - RE(\text{original}) & \text{if batter challenge succeeds}\\
+RE(\text{original}) - RE(\text{overturned}) & \text{if catcher challenge succeeds}\\
+0 & \text{if challenge fails}
+\end{cases}
+\end{align}
+with static baseline challenge value $EV_c=0.15$ runs in v1.
+
+Failed challenges incur
+\begin{align}
+Penalty_i = -\left(\frac{\max(0, 9-\text{inning}_i)}{9}\right)EV_c,
+\end{align}
+so final value is
+\begin{align}
+cRV_i = \Delta RV_{pitch,i} + Penalty_i.
+\end{align}
+
+\subsection{Edge Cases}
+Terminal pitch outcomes (strike-three / ball-four transitions represented as terminal states) are assigned zero immediate run expectancy in the mapped state. Extra-innings penalty is zero by definition due to inning-level challenge reset assumptions in the current specification.
+
+\section{Data and Pipeline}
+The repository implements five core modules: ingestion, event filtering, alternate realities, RE288 mapping, and scoring. In the continued implementation phase, we also added a validation layer that produces bootstrap confidence intervals, inning-bucket leverage summaries, and $EV_c$ sensitivity outputs. All artifacts are generated with one command:
+\begin{quote}
+\texttt{python pipeline.py --output-dir outputs}
+\end{quote}
+which writes CSV summaries, SVG figures, and LaTeX-ready tables.
+
+\section{Preliminary Results}
+Executable experiment outputs are written to \texttt{outputs/}. In this environment, the pipeline falls back to synthetic challenge events when full Statcast retrieval is unavailable. The produced artifacts include:
+\begin{itemize}
+    \item \texttt{challenge\_events\_scored.csv}
+    \item \texttt{player\_leaderboard.csv}
+    \item \texttt{challenger\_summary.csv}
+    \item SVG figures for leaderboard and challenger totals.
+\end{itemize}
+
+\input{../outputs/tables/leaderboard_top10.tex}
+\input{../outputs/tables/validation_summary.tex}
+
+Sensitivity outputs are also exported to \texttt{ev\_sensitivity.csv} and \texttt{figures/ev\_sensitivity.svg}, enabling rapid what-if analysis over plausible $EV_c$ assumptions.
+
+\section{Discussion}
+The current implementation now provides a stronger baseline for complete paper authorship: reproducible scoring, generated visual artifacts, and structured validation summaries that can be directly inserted into the manuscript. The added sensitivity layer is particularly useful for bounding model risk while $EV_c$ remains fixed in v1.
+
+\section{Limitations}
+Current results are still preliminary because challenge events can revert to synthetic fallback data when network/API extraction is unavailable. The RE288 surface is similarly a placeholder when an empirical matrix is not supplied. Consequently, numerical values in this draft are best interpreted as a systems-validation checkpoint rather than a final baseball estimate.
+
+\section{Next Empirical Steps}
+Immediate work focuses on replacing synthetic components with full-season challenge logs, estimating RE288 from historical innings, and rerunning all tables/figures under those empirical inputs. Once complete, we will add uncertainty reporting by challenger role and game leverage strata.
+
+\section{Conclusion}
+$cRV$ offers a practical framework for measuring challenge strategy in the ABS era and is ready for expansion into full-season evaluation and player-level stability analysis.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

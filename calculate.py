@@ -1,54 +1,33 @@
-"""cRV calculation engine (Module 5)
+"""cRV calculation engine (Module 5)."""
+from __future__ import annotations
 
-Provides calculate_crv(challenges_df) which computes Delta RV, penalty, and cRV.
-"""
 import pandas as pd
 
-EV_C = 0.15  # baseline constant for V1 as specified in CRV Master.md
+EV_C = 0.15
 
 
 def calculate_crv(challenges_df: pd.DataFrame) -> pd.DataFrame:
-    """Compute cRV per the specification.
-
-    Steps implemented as placeholders:
-      - Delta RV: RE_Challenge - RE_Reality (sign depends on challenger)
-      - innings_remaining = max(0, 9 - inning)
-      - Penalty applied only for failed challenges: -(innings_remaining / 9) * EV_C
-      - cRV = Delta RV + Penalty
-
-    Edge cases (inning-ending outs, base advances) must be handled by callers or via later refinements.
-    """
+    """Compute cRV with opportunity-cost penalty on failed challenges only."""
     if challenges_df is None or challenges_df.empty:
         return pd.DataFrame()
 
     df = challenges_df.copy()
+    df["RE_Reality"] = pd.to_numeric(df.get("RE_Reality", 0.0), errors="coerce").fillna(0.0)
+    df["RE_Challenge"] = pd.to_numeric(df.get("RE_Challenge", 0.0), errors="coerce").fillna(0.0)
+    df["inning"] = pd.to_numeric(df.get("inning", 9), errors="coerce").fillna(9).astype(int)
 
-    # Delta RV depending on challenger_type
-    def _delta(row):
-        try:
-            re_ch = float(row.get("RE_Challenge", 0))
-            re_re = float(row.get("RE_Reality", 0))
-        except Exception:
-            return 0.0
-        if row.get("challenger_type") == "batter":
-            return re_ch - re_re
-        elif row.get("challenger_type") == "catcher":
-            return re_re - re_ch
-        else:
-            return 0.0
+    df["delta_rv_pitch"] = 0.0
 
-    df["delta_rv_pitch"] = df.apply(_delta, axis=1)
+    batter_success = (df.get("challenger_type") == "batter") & (df.get("challenge_success") == True)
+    catcher_success = (df.get("challenger_type") == "catcher") & (df.get("challenge_success") == True)
 
-    # innings_remaining
-    df["innings_remaining"] = df.get("inning", 0).apply(lambda x: max(0, 9 - int(x)) if pd.notnull(x) else 0)
+    df.loc[batter_success, "delta_rv_pitch"] = df.loc[batter_success, "RE_Challenge"] - df.loc[batter_success, "RE_Reality"]
+    df.loc[catcher_success, "delta_rv_pitch"] = df.loc[catcher_success, "RE_Reality"] - df.loc[catcher_success, "RE_Challenge"]
 
-    # Penalty only when challenge_success == False
-    def _penalty(row):
-        if row.get("challenge_success") in (False, 0):
-            return - (row.get("innings_remaining", 0) / 9.0) * EV_C
-        return 0.0
+    df["innings_remaining"] = (9 - df["inning"]).clip(lower=0)
+    failed = df.get("challenge_success") == False
+    df["penalty"] = 0.0
+    df.loc[failed, "penalty"] = -((df.loc[failed, "innings_remaining"]) / 9.0) * EV_C
 
-    df["penalty"] = df.apply(_penalty, axis=1)
     df["cRV"] = df["delta_rv_pitch"] + df["penalty"]
-
     return df

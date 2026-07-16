@@ -1,0 +1,7 @@
+- [ ] Replace synthetic fallback experiment with full 2026 Statcast challenge extraction once API access is stable.
+- [ ] Build empirically estimated RE288 matrix from historical play-by-play instead of synthetic fallback matrix.
+- [ ] Validate challenge parsing rules against real ABS game logs and correct false positives/negatives.
+- [ ] Add year-over-year stability analysis once multi-season ABS challenge records are available.
+- [x] Add formal statistical validation baseline (bootstrap CI, leverage subgroup summaries, EV sensitivity).
+- [x] Add reproducible manuscript build tooling (LaTeX compile target in /home/runner/work/crv/crv/paper/Makefile).
+- [x] Expand related-work citations with additional framing/decision-context references.

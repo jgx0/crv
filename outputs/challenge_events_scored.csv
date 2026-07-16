@@ -1,0 +1,6 @@
+game_date,inning,inning_topbot,des,balls,strikes,outs,on_1b,on_2b,on_3b,player_name,challenge_success,challenger_type,called_pitch_type,base_state,original_count_state,overturned_count_state,original_terminal,overturned_terminal,RE_Reality,RE_Challenge,delta_rv_pitch,innings_remaining,penalty,cRV
+2026-04-01,1,Top,Batter challenge overturned called strike,0,0,0,,,,Sample Batter A,True,batter,called_strike,000,0-1,1-0,False,False,0.53,0.6,0.06999999999999995,8,0.0,0.06999999999999995
+2026-04-01,7,Bot,Catcher challenge upheld called ball,2,1,1,101.0,,,Sample Catcher B,False,catcher,called_ball,100,3-1,3-1,False,False,0.51,0.51,0.0,2,-0.03333333333333333,-0.03333333333333333
+2026-04-02,9,Top,Catcher challenge overturned called ball,3,2,2,101.0,202.0,,Sample Catcher C,True,catcher,called_ball,110,3-2,3-2,True,True,0.0,0.0,0.0,0,0.0,0.0
+2026-04-02,2,Bot,Batter abs challenge upheld called strike,1,1,0,,202.0,,Sample Batter D,False,batter,called_strike,010,1-2,1-2,False,False,0.72,0.72,0.0,7,-0.11666666666666667,-0.11666666666666667
+2026-04-05,4,Top,Batter challenge overturned called strike,3,2,1,101.0,202.0,303.0,Sample Batter E,True,batter,called_strike,111,3-2,3-2,True,True,0.0,0.0,0.0,5,0.0,0.0
