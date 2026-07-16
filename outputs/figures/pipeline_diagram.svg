@@ -1,0 +1,11 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='980' height='240'>
+<style>text{font-family:Arial,sans-serif;font-size:14px}.h{font-size:18px;font-weight:bold}</style>
+<text x='20' y='28' class='h'>CRV Pipeline</text>
+<rect x='20' y='60' width='170' height='56' rx='8' fill='#dbeafe'/><text x='46' y='93'>Ingestion</text>
+<rect x='210' y='60' width='170' height='56' rx='8' fill='#dcfce7'/><text x='232' y='93'>Event Filter</text>
+<rect x='400' y='60' width='170' height='56' rx='8' fill='#fef3c7'/><text x='414' y='93'>State Generator</text>
+<rect x='590' y='60' width='170' height='56' rx='8' fill='#ede9fe'/><text x='618' y='93'>RE288 Mapping</text>
+<rect x='780' y='60' width='170' height='56' rx='8' fill='#fee2e2'/><text x='824' y='93'>cRV Engine</text>
+<line x1='190' y1='88' x2='210' y2='88' stroke='black'/><line x1='380' y1='88' x2='400' y2='88' stroke='black'/><line x1='570' y1='88' x2='590' y2='88' stroke='black'/><line x1='760' y1='88' x2='780' y2='88' stroke='black'/>
+<text x='20' y='170'>Outputs: challenge_events.csv, player_leaderboard.csv, figures/*.svg</text>
+</svg>

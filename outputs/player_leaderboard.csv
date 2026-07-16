@@ -1,0 +1,6 @@
+player_name,challenger_type,total_challenges,success_rate,cumulative_cRV
+Sample Batter A,batter,1,1.0,0.06999999999999995
+Sample Batter E,batter,1,1.0,0.0
+Sample Catcher C,catcher,1,1.0,0.0
+Sample Catcher B,catcher,1,0.0,-0.03333333333333333
+Sample Batter D,batter,1,0.0,-0.11666666666666667

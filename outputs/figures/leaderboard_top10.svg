@@ -1,0 +1,19 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='520'>
+<style>text{font-family:Arial,sans-serif;font-size:13px} .title{font-size:18px;font-weight:bold}</style>
+<text class='title' x='60' y='30'>Top cRV Contributors</text>
+<text x='60' y='88'>Sample Batter A</text>
+<rect x='280' y='70' width='327' height='30' fill='#2a9d8f' />
+<text x='617' y='90'>0.070</text>
+<text x='60' y='130'>Sample Batter E</text>
+<rect x='280' y='112' width='0' height='30' fill='#2a9d8f' />
+<text x='290' y='132'>0.000</text>
+<text x='60' y='172'>Sample Catcher C</text>
+<rect x='280' y='154' width='0' height='30' fill='#2a9d8f' />
+<text x='290' y='174'>0.000</text>
+<text x='60' y='214'>Sample Catcher B</text>
+<rect x='280' y='196' width='156' height='30' fill='#e76f51' />
+<text x='446' y='216'>-0.033</text>
+<text x='60' y='256'>Sample Batter D</text>
+<rect x='280' y='238' width='546' height='30' fill='#e76f51' />
+<text x='836' y='258'>-0.117</text>
+</svg>

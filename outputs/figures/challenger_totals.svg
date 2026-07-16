@@ -1,0 +1,10 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='520'>
+<style>text{font-family:Arial,sans-serif;font-size:13px} .title{font-size:18px;font-weight:bold}</style>
+<text class='title' x='60' y='30'>cRV by Challenger Type</text>
+<text x='60' y='88'>catcher</text>
+<rect x='280' y='70' width='389' height='30' fill='#e76f51' />
+<text x='679' y='90'>-0.033</text>
+<text x='60' y='130'>batter</text>
+<rect x='280' y='112' width='546' height='30' fill='#e76f51' />
+<text x='836' y='132'>-0.047</text>
+</svg>

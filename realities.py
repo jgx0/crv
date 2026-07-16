@@ -1,54 +1,91 @@
-"""Generate alternate pitch realities (Module 3)
+"""Generate alternate pitch realities (Module 3)."""
+from __future__ import annotations
 
-Provides generate_alternate_realities(challenges_df) which computes original and overturned count states.
-"""
+from typing import Tuple
+
 import pandas as pd
 
 
-def _normalize_count_state(count_str: str) -> str:
-    """Ensure count_state strings like '0-0' or '3-2' are normalized."""
-    if not isinstance(count_str, str):
-        return ""
-    return count_str.strip()
+MAX_BALLS = 3
+MAX_STRIKES = 2
+
+
+def _format_count(balls: int, strikes: int) -> str:
+    return f"{max(0, min(MAX_BALLS, int(balls)))}-{max(0, min(MAX_STRIKES, int(strikes)))}"
+
+
+def _apply_call(balls: int, strikes: int, called_pitch_type: str | None) -> Tuple[int, int, bool]:
+    if called_pitch_type == "called_strike":
+        new_strikes = strikes + 1
+        if new_strikes >= 3:
+            return balls, MAX_STRIKES, True
+        return balls, new_strikes, False
+    if called_pitch_type == "called_ball":
+        new_balls = balls + 1
+        if new_balls >= 4:
+            return MAX_BALLS, strikes, True
+        return new_balls, strikes, False
+    return balls, strikes, False
+
+
+def _apply_overturn(balls: int, strikes: int, called_pitch_type: str | None) -> Tuple[int, int, bool]:
+    # Overturning a called strike produces a ball; overturning a called ball produces a strike.
+    if called_pitch_type == "called_strike":
+        return _apply_call(balls, strikes, "called_ball")
+    if called_pitch_type == "called_ball":
+        return _apply_call(balls, strikes, "called_strike")
+    return balls, strikes, False
+
+
+def _derive_base_state(row: pd.Series) -> str:
+    bases = []
+    for col in ("on_1b", "on_2b", "on_3b"):
+        value = row.get(col)
+        bases.append("1" if pd.notnull(value) and value not in ("", 0) else "0")
+    return "".join(bases)
 
 
 def generate_alternate_realities(challenges_df: pd.DataFrame) -> pd.DataFrame:
-    """For each challenge event, determine original_count_state and overturned_count_state.
-
-    This function implements the ABS-only rule: challenges only affect ball/strike counts.
-    The implementation here is a conservative placeholder; integrate full pitch logic later.
-    """
+    """Compute original and overturned count states from pre-pitch state and challenge outcome."""
     if challenges_df is None or challenges_df.empty:
         return pd.DataFrame()
 
     df = challenges_df.copy()
-    # Expect a column 'count' or 'count_state' that looks like 'B-S' or '0-0'. Try common names.
-    src_cols = [c for c in ("count_state", "count", "original_count_state") if c in df.columns]
-    if not src_cols:
-        # Nothing to base derivation on; return with placeholders
-        df["original_count_state"] = None
-        df["overturned_count_state"] = None
-        return df
+    df["balls"] = pd.to_numeric(df.get("balls", 0), errors="coerce").fillna(0).astype(int)
+    df["strikes"] = pd.to_numeric(df.get("strikes", 0), errors="coerce").fillna(0).astype(int)
 
-    src = src_cols[0]
-    df["original_count_state"] = df[src].astype(str).apply(_normalize_count_state)
+    if "base_state" not in df.columns:
+        df["base_state"] = df.apply(_derive_base_state, axis=1)
 
-    # Naive overturned logic: if original is '0-0' and batter wins, overturned becomes '1-0'
-    def _overturned(row):
-        orig = row["original_count_state"]
-        # simplistic rule: increment balls by 1 when overturned and challenger is batter
-        try:
-            b, s = orig.split("-")
-            b_i = int(b); s_i = int(s)
-        except Exception:
-            return None
-        if row.get("challenger_type") == "batter":
-            return f"{min(3, b_i+1)}-{s_i}"
-        elif row.get("challenger_type") == "catcher":
-            # catcher overturn typically removes a ball -> becomes a strike (naive)
-            return f"{b_i}-{min(2, s_i+1)}"
+    orig_count = []
+    over_count = []
+    orig_terminal = []
+    over_terminal = []
+
+    for _, row in df.iterrows():
+        balls = int(row.get("balls", 0))
+        strikes = int(row.get("strikes", 0))
+        called_pitch_type = row.get("called_pitch_type")
+        success = bool(row.get("challenge_success", False))
+
+        ob, os, oterm = _apply_call(balls, strikes, called_pitch_type)
+        rb, rs, rterm = _apply_overturn(balls, strikes, called_pitch_type)
+
+        if success:
+            overturned_state = _format_count(rb, rs)
+            overturned_terminal = rterm
         else:
-            return None
+            overturned_state = _format_count(ob, os)
+            overturned_terminal = oterm
 
-    df["overturned_count_state"] = df.apply(_overturned, axis=1)
+        orig_count.append(_format_count(ob, os))
+        over_count.append(overturned_state)
+        orig_terminal.append(oterm)
+        over_terminal.append(overturned_terminal)
+
+    df["original_count_state"] = orig_count
+    df["overturned_count_state"] = over_count
+    df["original_terminal"] = orig_terminal
+    df["overturned_terminal"] = over_terminal
+
     return df
