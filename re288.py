@@ -6,11 +6,8 @@ from typing import Optional
 import pandas as pd
 
 
-def load_re288_matrix(path: Optional[str] = None) -> pd.DataFrame:
-    """Load RE288 lookup table or return a synthetic fallback matrix."""
-    if path is not None:
-        return pd.read_csv(path)
-
+def _synthetic_re288_matrix() -> pd.DataFrame:
+    """Create synthetic fallback RE288 values when empirical data is unavailable."""
     rows = []
     for b1 in ("0", "1"):
         for b2 in ("0", "1"):
@@ -34,6 +31,60 @@ def load_re288_matrix(path: Optional[str] = None) -> pd.DataFrame:
                                 }
                             )
     return pd.DataFrame(rows)
+
+
+def estimate_empirical_re288_matrix(pbp_df: pd.DataFrame) -> pd.DataFrame:
+    """Estimate RE288 directly from play-by-play by averaging remaining runs in each state."""
+    if pbp_df is None or pbp_df.empty:
+        return pd.DataFrame()
+    required = {"game_pk", "inning", "inning_topbot", "balls", "strikes", "outs_when_up", "bat_score"}
+    if not required.issubset(set(pbp_df.columns)):
+        return pd.DataFrame()
+
+    df = pbp_df.copy()
+    df["balls"] = pd.to_numeric(df["balls"], errors="coerce").fillna(0).astype(int).clip(lower=0, upper=3)
+    df["strikes"] = pd.to_numeric(df["strikes"], errors="coerce").fillna(0).astype(int).clip(lower=0, upper=2)
+    df["outs"] = pd.to_numeric(df["outs_when_up"], errors="coerce").fillna(0).astype(int).clip(lower=0, upper=2)
+    df["bat_score"] = pd.to_numeric(df["bat_score"], errors="coerce").fillna(0.0)
+    if "post_bat_score" in df.columns:
+        df["post_bat_score"] = pd.to_numeric(df["post_bat_score"], errors="coerce").fillna(df["bat_score"])
+    else:
+        df["post_bat_score"] = df["bat_score"]
+
+    for base_col in ("on_1b", "on_2b", "on_3b"):
+        if base_col not in df.columns:
+            df[base_col] = None
+
+    df["base_state"] = (
+        df["on_1b"].notna().astype(int).astype(str)
+        + df["on_2b"].notna().astype(int).astype(str)
+        + df["on_3b"].notna().astype(int).astype(str)
+    )
+    df["count_state"] = df["balls"].astype(str) + "-" + df["strikes"].astype(str)
+
+    group_cols = ["game_pk", "inning", "inning_topbot"]
+    df["half_inning_final_score"] = df.groupby(group_cols)["post_bat_score"].transform("max")
+    df["runs_remaining"] = (df["half_inning_final_score"] - df["bat_score"]).clip(lower=0.0)
+
+    out = (
+        df.groupby(["base_state", "outs", "count_state"], dropna=False)["runs_remaining"]
+        .mean()
+        .reset_index()
+        .rename(columns={"runs_remaining": "expected_runs"})
+    )
+    out["expected_runs"] = pd.to_numeric(out["expected_runs"], errors="coerce").fillna(0.0).round(3)
+    return out
+
+
+def load_re288_matrix(path: Optional[str] = None, pbp_df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+    """Load RE288 lookup table from CSV, estimate empirically, or use synthetic fallback."""
+    if path is not None:
+        return pd.read_csv(path)
+    if pbp_df is not None and not pbp_df.empty:
+        empirical = estimate_empirical_re288_matrix(pbp_df)
+        if not empirical.empty:
+            return empirical
+    return _synthetic_re288_matrix()
 
 
 def map_re288(challenges_df: pd.DataFrame, re288_matrix: pd.DataFrame) -> pd.DataFrame:
