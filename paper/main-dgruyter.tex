@@ -85,16 +85,17 @@ alternate-state generation, RE288 mapping, and scoring---with bootstrap
 uncertainty, leverage stratification, and sensitivity analysis. A central
 methodological contribution is the valuation of terminal outcomes: challenges
 converting a called strike three into ball four, or the reverse, end the plate
-appearance and must be valued using post-event base/out states and immediate
-runs scored rather than zeroed placeholders. Such events are the
-highest-leverage challenges in the game, and zeroing them erases the metric's
-most important signal, inverting the sign of the aggregate result.
+appearance and must be valued from post-event base/out states and runs scored,
+not zeroed placeholders.
 
-Validation on a designed corpus of ten challenge events yields mean
-$cRV = 0.193$ runs per event, with the largest contributions from a
-bases-loaded walk conversion and a late-inning inning-ending strikeout
-conversion. Full-season estimates remain the primary empirical target; current
-figures are a methodological baseline, not a player ranking.}
+Applying the pipeline to $1{,}914$ challenge events from the 2026 regular
+season, we estimate a mean $cRV$ of $0.143$ runs per challenge (bootstrap
+$95\%$ CI $[0.130,\,0.158]$), with catchers generating more than three times
+the per-challenge value of batters ($0.222$ versus $0.065$ runs). The
+highest-value events are terminal conversions---bases-loaded walk overturns and
+inning-ending strikeout overturns worth over $1.7$ runs each---and zeroing such
+states, as a naive implementation would, drives the aggregate negative
+($-0.031$), inverting the sign of the result.}
 
 \keywords{run expectancy; opportunity cost; catcher framing; sabermetrics;
 decision quality; resource allocation}
@@ -104,11 +105,12 @@ decision quality; resource allocation}
 \input{body}
 
 \section*{Data Availability}
-The pitch-level inputs are derived from publicly available Statcast data,
-retrievable through the \texttt{pybaseball} interface \citep{pybaseball}. The
-results reported in this manuscript use the designed synthetic validation
-corpus described in Section~\ref{sec:validation}, which is generated
-deterministically by the accompanying code.
+The pitch-level inputs are publicly available Statcast data, retrieved through
+the \texttt{pybaseball} interface \citep{pybaseball}. The results reported in
+this manuscript are computed from the full 2026 regular-season challenge corpus
+($n = 1{,}914$) extracted from those feeds. The deterministic synthetic
+validation corpus described in Section~\ref{sec:validation} is retained as an
+offline correctness harness and is regenerable from the accompanying code.
 
 \begin{acknowledgement}
   TODO(post-acceptance): restore acknowledgments here.

@@ -16,6 +16,11 @@ def fetch_2026_statcast_data(start_date: Optional[str] = None, end_date: Optiona
     except Exception:
         return pd.DataFrame()
 
+    # A full-season statcast() pull is split into per-day subqueries and can run
+    # for many minutes. Caching persists each successful subquery to disk, so an
+    # interrupted run (disconnect, crash) resumes instead of refetching everything.
+    pb.cache.enable()
+
     if start_date is None:
         start_date = "2026-03-26"
     if end_date is None:

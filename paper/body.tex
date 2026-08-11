@@ -28,8 +28,10 @@ What has been missing is a unified, run-denominated valuation that (i)~credits
 the immediate state change produced by an overturn and (ii)~charges the
 opportunity cost of a failed challenge against the remaining game horizon.
 This paper formalizes that valuation as Challenge Run Value ($cRV$), implements
-it as an open and reproducible pipeline, and validates the implementation
-against a designed corpus of edge cases.
+it as an open and reproducible pipeline, validates the implementation against a
+designed corpus of edge cases, and applies it to the full 2026 regular season:
+$1{,}914$ challenge events scored against an empirically estimated RE288
+surface.
 
 \subsection{Contributions}
 \begin{enumerate}
@@ -42,10 +44,14 @@ against a designed corpus of edge cases.
         detail: it is where nearly all of the metric's signal lives.
   \item A reproducible five-module pipeline with provenance tracking, bootstrap
         uncertainty, leverage stratification, and $EV_c$ sensitivity
-        (Section~\ref{sec:pipeline}).
-  \item A designed validation corpus and unit-test suite that exercises each
-        state-transition path, enabling regression-safe development
+        (Section~\ref{sec:pipeline}), backed by a designed validation corpus and
+        unit-test suite that exercises each state-transition path
         (Section~\ref{sec:validation}).
+  \item An empirical application to the 2026 regular season---$1{,}914$
+        challenges scored against an empirically estimated RE288 matrix---that
+        quantifies the run value of the challenge as used in practice and shows
+        catchers extract more than three times the per-challenge value of
+        batters (Section~\ref{sec:results}).
 \end{enumerate}
 
 \section{Related Work}
@@ -195,13 +201,15 @@ appearance ends, but the \emph{inning} does not. A bases-loaded walk leaves
 the bases loaded with a run already in; a strikeout with one out leaves runners
 on with two outs. Both states carry substantial run expectancy.
 
-The practical consequence was severe. Under the old treatment, the
-bases-loaded walk conversion in our validation corpus scored $\Delta RV = 0$
-instead of $+1.32$ runs, and the inning-ending strikeout conversion scored $0$
-instead of $+0.46$. Mean $cRV$ across the corpus was $-0.016$---the metric
-reported that challenging was, on net, \emph{harmful}, because only the
-penalties survived. After the correction, mean $cRV$ is $+0.193$. The sign of
-the headline result flipped on this one modeling decision.
+The practical consequence is severe. Under the old treatment, a bases-loaded
+walk conversion scores $\Delta RV = 0$ instead of the $+1.92$ runs it is
+actually worth, and an inning-ending strikeout conversion scores $0$ instead of
+$+1.72$. On the full 2026 corpus (Section~\ref{sec:results}), zeroing terminal
+states drives mean $cRV$ to $-0.031$---the metric reports that challenging is,
+on net, \emph{harmful}, because only the penalties survive. With terminal states
+valued correctly, mean $cRV$ is $+0.143$. The sign of the headline result flips
+on this one modeling decision, and it flips on real data, not just a
+constructed example.
 
 \section{Data and Pipeline}
 \label{sec:pipeline}
@@ -239,11 +247,22 @@ to a ball'' with no role named---the event is retained but flagged via a
 \texttt{parse\_quality} column rather than silently dropped or silently
 mis-assigned.
 
-This matters for honest accounting: in the synthetic corpus, 1 of 10 events
-carries a \texttt{missing\_challenger} flag. Such events contribute zero to
+This matters for honest accounting: in the 2026 corpus, only 2 of $1{,}914$
+events carry a \texttt{missing\_challenger} flag. Such events contribute zero to
 $\Delta RV$ (no role means no sign convention) and appear as an
 \texttt{unknown} row in the role summary. Production ABS feeds with structured
 challenge flags would eliminate this ambiguity entirely.
+
+A structural feature of the extraction deserves note. Statcast records the
+descriptive \texttt{des} text on the final pitch of a plate appearance, so the
+challenges recoverable from it are precisely those that end the plate
+appearance: $1{,}372$ overturned or upheld strikeout calls and $542$ walk
+calls, concentrated on two-strike and three-ball counts. Non-terminal
+count-change challenges (for example an 0--1 call overturned to 1--0 mid
+at-bat) are not separately identifiable from \texttt{des} and are absent from
+this corpus. This is a selection property of the data source, not of the metric;
+Section~\ref{sec:results} reports on the terminal challenges that dominate
+actual challenge usage.
 
 \subsection{RE288 estimation}
 The empirical estimator groups play-by-play pitches by
@@ -267,14 +286,16 @@ All artifacts regenerate with:
 A \texttt{run\crvus{}metadata.csv} records the data source
 (\texttt{statcast}\slash\texttt{synthetic}) and RE288 source
 (\texttt{empirical}\slash\texttt{synthetic}\slash\texttt{csv}) for every run, so
-no figure in this paper can be silently misattributed to real data.
+no figure can be silently misattributed. The results in this paper were
+produced with \texttt{data\crvus{}source = statcast} and
+\texttt{re288\crvus{}source = empirical}: real 2026 challenge events scored
+against an RE288 matrix estimated from the same season's play-by-play.
 
 \section{Validation Design}
 \label{sec:validation}
-Because full-season challenge data is not yet available in this environment,
-correctness is established against a \emph{designed} corpus rather than a
-random sample. The 10 synthetic events were constructed to exercise every
-state-transition path:
+The state-transition logic is the part of the pipeline most prone to silent
+error, so its correctness is established independently of any particular data
+pull, against a \emph{designed} corpus that exercises every transition path:
 
 \begin{itemize}
   \item non-terminal count changes (0--0 strike overturned to a ball),
@@ -289,36 +310,43 @@ state-transition path:
 A unit-test suite (\texttt{tests/}) asserts the expected behavior of each path
 independently of the pipeline---walk force chains for all eight base states,
 terminal RE zeroing, extra-inning penalty nullification, and parser role
-extraction. All tests pass on the current implementation.
+extraction. All tests pass on the current implementation. This harness makes the
+empirical results of Section~\ref{sec:results} regression-safe: the transition
+rules that value a bases-loaded walk are the same rules the tests pin down.
 
-\section{Preliminary Results}
+\section{Results}
 \label{sec:results}
-Executable outputs live in \texttt{outputs/}. The figures below use the
-synthetic validation corpus ($n=10$, success rate $60\%$) under the synthetic
-RE288 surface, with $EV_c = 0.15$. \textbf{These are systems-validation
-figures, not baseball estimates.}
+We apply the pipeline to every ABS challenge recoverable from the 2026 regular
+season: $1{,}914$ events spanning $2026$-$03$-$26$ through $2026$-$08$-$09$,
+issued by $441$ distinct challengers, scored against an RE288 matrix estimated
+from the same season's play-by-play ($EV_c = 0.15$). All artifacts live in
+\texttt{outputs/}; the provenance metadata confirms the \texttt{statcast} and
+\texttt{empirical} sources.
 
 \input{../outputs/tables/validation_summary.tex}
 
-Mean $cRV$ is positive, at $0.193$ runs per event, with a seeded bootstrap
-95\% CI of $[0.000,\,0.487]$, whose lower bound is marginally below zero
-before rounding. The interval is wide, as expected at $n=10$, and
-that width is itself a feature of the validation harness: it will tighten
-automatically on full-season data without any code change. The lower bound sits
-essentially on zero, so the corpus does not establish that mean $cRV$ differs
-from zero, and no substantive claim should rest on the point estimate at this
-sample size. The bootstrap is seeded, so these bounds reproduce exactly on
-re-run.
+Mean $cRV$ is $0.143$ runs per challenge, with a bootstrap $95\%$ CI of
+$[0.130,\,0.158]$---comfortably above zero, so the challenge as actually used in
+2026 added run value on net. The overall success rate is $46\%$. At
+$n = 1{,}914$ the interval is tight, a marked contrast to the wide bands a small
+validation corpus would produce, and it is narrow enough to support
+role- and leverage-level comparisons rather than only a directional claim.
 
 \input{../outputs/tables/leaderboard_top10.tex}
 
 \input{../outputs/tables/challenger_summary.tex}
 
 Figure~\ref{fig:leaderboard} shows the player-level distribution and
-Figure~\ref{fig:challenger} the same totals aggregated by role. The shape is
-the one the framework predicts: a small number of terminal-state conversions
-carry nearly all the positive value, while failures contribute a thin band of
-small negative values whose magnitude is set entirely by inning.
+Figure~\ref{fig:challenger} the same totals aggregated by role. The shape is the
+one the framework predicts: value is concentrated in terminal-state conversions,
+while failures contribute a thin band of small negative values whose magnitude
+is set entirely by inning. The role split is the headline empirical finding.
+Batters and catchers issue challenges in almost equal numbers ($960$ versus
+$952$), but catchers accumulate $211.8$ runs of $cRV$ to the batters' $62.8$---a
+per-challenge mean of $0.222$ against $0.065$. Catchers convert borderline
+two-strike takes into outs, the single most valuable thing a challenge can do;
+batters more often convert a called third strike into a mere continuation of the
+at-bat.
 
 \crvfigure{fig:leaderboard}{leaderboard_top10}{0.9}
 
@@ -328,50 +356,55 @@ small negative values whose magnitude is set entirely by inning.
 Three events illustrate the model's economic content. Each is traced from
 pre-pitch state to final score.
 
-\paragraph{Bases-loaded walk conversion (Sample Batter E, $+1.32$).}
-Pre-pitch: bases loaded, 1 out, 3--2 count. The umpire calls strike three. The
-batter challenges and wins, converting the pitch to ball four.
+\paragraph{Bases-loaded walk conversion (Eli White, batter, $+1.92$).}
+Fifth inning, bases loaded, 1 out, 3--2 count. The umpire calls strike three;
+White challenges and wins, converting the pitch to ball four.
 \begin{itemize}
   \item \emph{Original reality:} strikeout. Outs $1 \to 2$, bases loaded
-        unchanged, count resets. $RE(\text{original}) \approx 0.46$.
-  \item \emph{Overturned reality:} walk. Runner from third is forced home
-        ($+1$ run), bases remain loaded, outs stay at 1.
-        $RE(\text{overturned}) = 1.00 + 0.78 \approx 1.78$.
+        unchanged. $RE(\text{original}) = 0.718$.
+  \item \emph{Overturned reality:} walk. The runner on third is forced home
+        ($+1$ run, Ozzie Albies scores), bases remain loaded, outs stay at 1.
+        $RE(\text{overturned}) = 2.637$.
 \end{itemize}
-Batter delta: $1.78 - 0.46 = 1.32$ runs. No penalty (challenge retained).
-This single event is worth more than every other event in the corpus combined,
-which is the correct economic answer: a forced run plus the difference between
-one and two outs with the bases loaded is an enormous swing.
+Batter delta: $2.637 - 0.718 = 1.919$ runs, with no penalty (the challenge is
+retained). A forced run plus the gap between one and two outs with the bases
+loaded is an enormous swing, and it is the single most valuable challenge
+outcome available.
 
-\paragraph{Ninth-inning strikeout conversion (Sample Catcher C, $+0.46$).}
-Pre-pitch: runners on first and second, 2 outs, 3--2 count. The umpire calls
-ball four. The catcher challenges and wins, converting the walk into strike
-three.
+\paragraph{Inning-ending strikeout conversion (Luis Campusano, catcher, $+1.72$).}
+Fourth inning, bases loaded, 2 outs, 3--2 count. The umpire calls ball four;
+Campusano challenges and wins, converting the walk into strike three.
 \begin{itemize}
-  \item \emph{Original reality:} walk. Bases loaded, still 2 outs.
-        $RE(\text{original}) \approx 0.46$.
+  \item \emph{Original reality:} walk. A run is forced in ($+1$), bases stay
+        loaded, still 2 outs. $RE(\text{original}) = 1.718$.
   \item \emph{Overturned reality:} strikeout, third out. Inning over.
         $RE(\text{overturned}) = 0$.
 \end{itemize}
-Catcher delta: $0.46 - 0 = 0.46$ runs. This is the case the old
-zero-everything treatment got most wrong---it scored the inning-ending
-conversion at exactly zero.
+Catcher delta: $1.718 - 0 = 1.718$ runs. This is exactly the case the old
+zero-everything treatment got most wrong: it scored the inning-ending
+conversion---erasing a run already in and ending the threat---at zero.
 
-\paragraph{Early failed challenge (Sample Batter D, $-0.117$).}
-A second-inning failed batter challenge yields $\Delta RV = 0$ and
-$Penalty = -(7/9) \times 0.15 \approx -0.117$. Compare the tenth-inning
-failure by Sample Catcher F, which yields exactly $0.00$. Same outcome, same
-accuracy, ten-fold difference in cost---this is the resource-management
-incentive the framework exists to encode.
+\paragraph{Early failed challenge (Carter Jensen, catcher, $-0.13$).}
+A first-inning failed catcher challenge yields $\Delta RV = 0$ and
+$Penalty = -(8/9) \times 0.15 \approx -0.133$. Compare any ninth-inning
+failure, which yields exactly $0.00$ because no innings of option value remain.
+Same outcome, same accuracy, but the early challenge is charged eight-ninths of
+$EV_c$ and the late one nothing---the resource-management incentive the
+framework exists to encode.
 
 \subsection{Leverage stratification}
 \input{../outputs/tables/leverage_summary.tex}
 
-Mid- and late-inning buckets dominate aggregate value in this corpus, driven by
-the two terminal conversions above. The early bucket is net negative: it
-contains only failures, which is by construction of the corpus but also
-reflects the real strategic asymmetry---early challenges have the most to lose
-and, on average, the least to gain.
+Total value tracks event count: the late bucket (innings 7--9) carries the most
+challenges ($713$) and the largest aggregate ($99.8$ runs), followed by mid
+($617$ events, $94.3$) and early ($557$ events, $76.8$), with a small extra-inning
+tail ($27$ events, $3.7$). What is striking is how flat the \emph{mean} is across
+buckets---$0.138$, $0.153$, $0.140$, and $0.137$ runs respectively. The
+opportunity-cost penalty makes an early failure costlier than a late one, but
+that term touches only the $54\%$ of challenges that fail, and the terminal
+conversions that dominate the numerator occur in every inning. The net effect is
+that per-challenge value is nearly constant across the game while total value
+accumulates wherever challenges are most frequent.
 
 \subsection{Sensitivity to $EV_c$}
 \label{sec:sensitivity}
@@ -379,10 +412,10 @@ and, on average, the least to gain.
 
 \crvfigure{fig:sensitivity}{ev_sensitivity}{0.85}
 
-Total corpus $cRV$ ranges from $2.03$ at $EV_c = 0.05$ to $1.78$ at
-$EV_c = 0.30$ (Figure~\ref{fig:sensitivity}), a spread of $0.25$ runs across a
-sixfold change in the
-parameter. The relationship is exactly linear: from Equation~\ref{eq:penalty},
+Total corpus $cRV$ ranges from $314.4$ runs at $EV_c = 0.05$ to $214.8$ runs at
+$EV_c = 0.30$ (Figure~\ref{fig:sensitivity}), a spread of $99.6$ runs across a
+sixfold change in the parameter, with the mean falling from $0.164$ to $0.112$.
+The relationship is exactly linear: from Equation~\ref{eq:penalty},
 $\sum_i cRV_i = \sum_i \Delta RV_i - EV_c \sum_{i \in \text{fail}}
 (9 - \mathrm{inning}_i)/9$, and only the second term depends on $EV_c$.
 
@@ -438,18 +471,26 @@ to avoid double-counting pitches that were framed \emph{and} challenged.
 
 \section{Limitations}
 \begin{itemize}
-  \item \textbf{Data source.} Results in this draft use a synthetic challenge
-        corpus, because Statcast was unreachable in this environment.
-        Numerical values are a methodological checkpoint, not a 2026 player
-        ranking, and the ``Sample'' player names are deliberate.
-  \item \textbf{RE288 surface.} The default matrix is a structured synthetic
-        approximation with a linear functional form. Empirical multi-season
-        estimation is implemented
-        (\texttt{estimate\crvus{}empirical\crvus{}re288\crvus{}matrix}) and will replace the
-        fallback once historical play-by-play is wired into production runs.
-  \item \textbf{Sample size.} $n = 10$ is a validation corpus, not a sample.
-        The bootstrap interval is correspondingly wide and no inferential claim
-        should be drawn from it.
+  \item \textbf{Data source and coverage.} The corpus is the full set of
+        2026 regular-season challenge events recoverable from Statcast
+        play-by-play descriptions ($n = 1{,}914$). Because Statcast records an
+        outcome in the free-text description only on the pitch that ends the
+        plate appearance, every recovered challenge is plate-appearance-ending
+        ($1{,}372$ strikeout calls, $542$ walk calls). Count-changing
+        challenges that leave the plate appearance live are not represented.
+        The results are therefore a census of \emph{terminal} challenges rather
+        than a sample of all challenges---which captures the highest-leverage
+        events but understates the count of low-value ones.
+  \item \textbf{RE288 surface.} The matrix is estimated empirically from 2026
+        regular-season play-by-play
+        (\texttt{estimate\crvus{}empirical\crvus{}re288\crvus{}matrix}); cells
+        visited rarely inherit correspondingly wide sampling error, and
+        multi-season pooling would stabilize them.
+  \item \textbf{Sample size and selection.} $n = 1{,}914$ is a full-season
+        census of terminal challenges, not a random sample. The bootstrap
+        interval $[0.130,\,0.158]$ reflects resampling variability within that
+        census, not sampling from a larger population, and the reported mean is
+        an average over the highest-leverage subset of challenges.
   \item \textbf{Fixed $EV_c$.} The baseline challenge value is a hardcoded
         constant rather than an estimated quantity. Section
         \ref{sec:sensitivity} bounds the resulting model risk but does not
@@ -458,7 +499,7 @@ to avoid double-counting pitches that were framed \emph{and} challenged.
         innings remaining. This has correct boundary behavior but no empirical
         justification; a convex decay may better reflect late-inning leverage.
   \item \textbf{Parse ambiguity.} Role inference from free-text descriptions
-        can fail (1/10 events in the synthetic corpus). Production feeds with
+        can fail ($2$ of $1{,}914$ events). Production feeds with
         structured challenge flags would eliminate this.
   \item \textbf{No win-probability layer.} $cRV$ is run-denominated, not
         win-denominated. A one-run swing in a blowout and in a tie game score
@@ -471,7 +512,10 @@ to avoid double-counting pitches that were framed \emph{and} challenged.
 \label{sec:future}
 Immediate priorities, roughly in dependency order:
 \begin{enumerate}
-  \item Replace synthetic inputs with full 2026 Statcast challenge extraction.
+  \item Recover count-changing (non-terminal) challenges that Statcast's
+        free-text descriptions omit, using structured ABS challenge logs, so the
+        corpus becomes a census of \emph{all} challenges rather than terminal
+        ones only.
   \item Build a multi-season empirical RE288 matrix and report per-cell sample
         sizes, flagging low-$n$ states as unstable.
   \item Validate description parsers against official ABS game logs and
@@ -500,16 +544,18 @@ a distinction invisible to raw success rates.
 
 The methodological finding we would most emphasize is the terminal-outcome
 treatment. Plate-appearance-ending challenges are simultaneously the most
-common high-leverage challenges and the easiest to model incorrectly; zeroing
-them inverts the sign of the headline result. Any future implementation of a
+common high-leverage challenges and the easiest to model incorrectly; on the
+full 2026 corpus, zeroing them turns a mean $cRV$ of $+0.143$ into $-0.031$,
+inverting the sign of the headline result. Any future implementation of a
 challenge-valuation metric should treat walk force chains and strikeout out
 increments as first-class cases, not edge cases.
 
-The accompanying open pipeline makes every table and figure in this draft
-regenerable from a single command, with provenance tracking that prevents
-synthetic results from being mistaken for empirical ones. The project is
-positioned for full-season empirical estimation as soon as stable challenge
-feeds are available.
+The accompanying open pipeline makes every table and figure in this paper
+regenerable from a single command, with provenance tracking that records
+whether each run drew on live Statcast data or the synthetic validation corpus.
+Applied to $1{,}914$ real challenge events, it establishes catchers as the
+dominant beneficiaries of the ABS challenge and terminal conversions as the
+events that carry the metric.
 
 \appendix
 \section{State-Transition Rules}
@@ -599,11 +645,15 @@ RE(\text{state}) =
 \begin{verbatim}
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python pipeline.py --force-synthetic --output-dir outputs
+python pipeline.py --output-dir outputs        # full 2026 Statcast pull
 python -m pytest tests/ -q
 cd paper && make paper
 \end{verbatim}
 \end{quote}
+The first \texttt{pipeline.py} invocation fetches and caches the 2026
+regular-season Statcast feed, isolates challenge events, estimates the empirical
+RE288 surface, and writes every table and figure; add
+\texttt{-{}-force-synthetic} to regenerate the offline validation corpus instead.
 Every table in Section~\ref{sec:results} is generated by the pipeline and
 included via \verb|\input|; rerunning the pipeline updates the manuscript
 automatically. A \texttt{run\_metadata.csv} artifact records the data
