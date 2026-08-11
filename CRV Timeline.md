@@ -34,7 +34,7 @@ Data is useless without narrative. This phase finds the story your data is telli
 
 A completed, rigorous sabermetric paper is a massive differentiator for college applications—especially if you are targeting data-heavy quantitative programs at schools like Vanderbilt or Wake Forest.
 
-- **Task 9: The Write-Up.** Structure the paper formally: Abstract, Introduction, Methodology (show your math), Results (show your leaderboards), and Conclusion. Keep it under 2,000 words.
+- **Task 9: The Write-Up.** Structure the paper formally: Abstract, Introduction, Methodology (show your math), Results (show your leaderboards), and Conclusion. No length cap — give the methodology, edge-case handling, and validation as much room as the argument needs, and use appendices for full state-transition rules and derivations.
     
 - **Task 10: Community Review.** Post a draft of the methodology and top-10 leaderboards to the FanGraphs Community Research blog or a sabermetrics forum to get peer feedback.
     

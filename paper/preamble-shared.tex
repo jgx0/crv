@@ -1,0 +1,20 @@
+% Macros used by body.tex, which both main.tex (submission) and
+% main-dgruyter.tex (post-acceptance typeset) \input. Anything the shared body
+% depends on belongs here, NOT in a single document's preamble -- otherwise the
+% other document fails with "undefined control sequence".
+%
+% \crvfigure is deliberately NOT defined here: each document needs its own
+% version (placement marker vs. embedded graphic), so they define it themselves.
+
+% Long snake_case identifiers set in \texttt are single unbreakable words and
+% punch through the margin. \crvus prints an underscore and permits a line
+% break after it, so such names wrap at a natural seam. Call it as \crvus{} so
+% the following space is not swallowed by the macro name.
+\newcommand{\crvus}{\_\allowbreak}
+
+% Double-spaced 12pt on a single-column measure gives TeX few good break points,
+% and paragraphs dense with hyphenated compounds ("five-module pipeline---
+% ingestion, ... alternate-state generation") exceed \tolerance and set overfull
+% rather than loose. \emergencystretch authorizes a final pass with extra
+% interword stretch, which resolves those without touching the prose.
+\setlength{\emergencystretch}{2em}

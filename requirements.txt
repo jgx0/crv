@@ -1,2 +1,4 @@
-pandas
-pybaseball
+pandas>=2.0
+pybaseball>=2.2
+pytest>=7.0
+matplotlib>=3.8

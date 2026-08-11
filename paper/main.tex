@@ -1,87 +1,175 @@
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
+% =====================================================================
+%  Journal of Quantitative Analysis in Sports -- SUBMISSION manuscript
+%
+%  Formatted to the JQAS "Manuscript Preparation Guidelines":
+%    * 8.5 x 11 in paper, 1 in margins, single column
+%    * 12 pt Unicode font, double-spaced (~26 lines/page)
+%    * de-identified for blind review (no author, no affiliation, no repo URL)
+%    * abstract ~200 words, 3-6 keywords absent from the title
+%    * Harvard (author-date) references
+%    * figures NOT embedded: cited in order, supplied as separate EPS/TIF,
+%      with legends collected on their own pages
+%
+%  Build:
+%    make paper            -> submission copy (figures external)
+%    make paper-review     -> same text with figures inlined, for reading
+%  The typeset De Gruyter version lives in main-dgruyter.tex (post-acceptance).
+% =====================================================================
+\documentclass[12pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{setspace}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{amsmath}
-\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage[round,authoryear]{natbib}
 
-\title{Challenge Run Value ($cRV$): Quantifying Strategic Value in MLB's ABS Challenge Era}
-\author{Working Draft}
-\date{\today}
+% agsm.bst emits \harvardurl{...} for entries with a url field, but that macro
+% is defined by harvard.sty, which cannot coexist with natbib. Defining it in
+% terms of \url gives the same rendering without pulling in that conflict.
+% Note: escape underscores in .bib url fields -- by the time \harvardurl sees
+% its argument the catcodes are fixed, so \url cannot rescue a bare "_".
+\usepackage{url}
+\providecommand{\harvardurl}[1]{\textbf{URL:} \url{#1}}
+
+% Macros shared with main-dgruyter.tex via body.tex.
+\input{preamble-shared}
+
+% REVIEW=1 inlines the figures so the paper can be read locally. The
+% submission build leaves them out, per the "do not embed figures" rule.
+\newif\ifreview
+\ifdefined\REVIEW\reviewtrue\else\reviewfalse\fi
+
+\ifreview
+  \usepackage{hyperref}
+\fi
+
+\bibliographystyle{agsm}   % Harvard author-date
+
+% Figure placement markers stand in for the artwork in the submission build.
+% \crvfigure{label}{file}{width}: inlines the graphic in the review build,
+% emits an "[Figure N about here]" marker in the submission build. Either way
+% the figure is numbered and \ref-able, and the legend text lives once, in the
+% Figure Legends section, per the JQAS legend-on-separate-pages rule.
+\newcommand{\crvfigure}[3]{%
+  \ifreview
+    \begin{figure}[htbp]
+      \centering
+      \includegraphics[width=#3\textwidth]{../outputs/figures/#2.pdf}
+      \caption{See Figure Legends.}
+      \label{#1}
+    \end{figure}%
+  \else
+    \begin{figure}[htbp]
+      \centering
+      \rule{0.55\textwidth}{0.4pt}\\[6pt]
+      [Figure~\ref{#1} about here]\\[4pt]
+      \rule{0.55\textwidth}{0.4pt}
+      \caption{}
+      \vspace{-2.2em}
+      \label{#1}
+    \end{figure}%
+  \fi}
+
+\doublespacing
+
+\title{Challenge Run Value ($cRV$): Quantifying Strategic Value\\in MLB's ABS Challenge Era}
+
+% De-identified for blind review. Author, affiliation, and repository details
+% are supplied through ScholarOne, not in the manuscript file.
+\author{}
+\date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We introduce Challenge Run Value ($cRV$), a pitch-level metric for valuing Automated Ball-Strike (ABS) challenges in Major League Baseball. The model combines run expectancy deltas from count-state changes with a decaying opportunity-cost penalty for failed challenges. We implement a reproducible pipeline covering ingestion, challenge event isolation, alternate-state generation, RE288 mapping, and final scoring. Initial experimental outputs in this repository are generated with an executable workflow and include leaderboards, challenger-level summaries, and publication-ready diagrams. Current results are an implementation baseline and demonstrate end-to-end feasibility; full-season empirical estimates and formal uncertainty analysis remain ongoing.
+\noindent
+We introduce Challenge Run Value ($cRV$), a pitch-level metric for valuing
+Automated Ball-Strike (ABS) challenges in Major League Baseball. The model
+combines run-expectancy deltas from count- and plate-appearance-ending state
+changes with a time-decaying opportunity-cost penalty for failed challenges.
+Unlike framing metrics, which measure physical receiving skill under human
+umpiring, $cRV$ treats the challenge as a scarce strategic resource whose
+value depends on timing, conversion, and forgone future options.
+
+We implement a reproducible five-module pipeline---ingestion, event isolation,
+alternate-state generation, RE288 mapping, and scoring---with bootstrap
+uncertainty, leverage stratification, and sensitivity analysis. A central
+methodological contribution is the valuation of terminal outcomes: challenges
+converting a called strike three into ball four, or the reverse, end the plate
+appearance and must be valued using post-event base/out states and immediate
+runs scored rather than zeroed placeholders. Such events are the
+highest-leverage challenges in the game, and zeroing them erases the metric's
+most important signal, inverting the sign of the aggregate result.
+
+Validation on a designed corpus of ten challenge events yields mean
+$cRV = 0.193$ runs per event, with the largest contributions from a
+bases-loaded walk conversion and a late-inning inning-ending strikeout
+conversion. Full-season estimates remain the primary empirical target; current
+figures are a methodological baseline, not a player ranking.
 \end{abstract}
 
-\section{Introduction}
-MLB's ABS challenge system changes pitch evaluation from a framing-only paradigm toward constrained strategic resource management. Existing catcher value frameworks emphasize receiving effects and called-strike manipulation \cite{marchi2013,mlbframing}. In contrast, ABS challenge value depends on whether a scarce challenge is deployed at the right time and converted successfully.
+\vspace{1em}
+\noindent\textbf{Keywords:} run expectancy; opportunity cost; catcher framing;
+sabermetrics; decision quality; resource allocation.
 
-This paper formalizes that value with $cRV$, a run-based framework grounded in run expectancy and game-state opportunity cost.
+\newpage
 
-\section{Related Work}
-Count-dependent run expectancy is foundational in sabermetric modeling \cite{tango2007}. Public resources have extended this through pitch-level and state-transition analysis \cite{baseballprospectusre}. Prior catcher receiving research and framing-era work established that called-strike environments are measurable and strategically relevant \cite{marchi2013,fast2011,mlbframing}. Broader evidence of umpiring-context effects in sport motivates explicit treatment of decision systems and incentives \cite{scorecasting}. Emerging ABS reporting has focused on descriptive outcomes, but not on a unified challenge valuation metric \cite{mlbabs2024}.
+\input{body}
 
-\section{Methodology}
-For each challenge event $i$, define
-\begin{align}
-\Delta RV_{pitch,i} &=
-\begin{cases}
-RE(\text{overturned}) - RE(\text{original}) & \text{if batter challenge succeeds}\\
-RE(\text{original}) - RE(\text{overturned}) & \text{if catcher challenge succeeds}\\
-0 & \text{if challenge fails}
-\end{cases}
-\end{align}
-with static baseline challenge value $EV_c=0.15$ runs in v1.
+\newpage
+\section*{Data Availability}
+\addcontentsline{toc}{section}{Data Availability}
+The pitch-level inputs are derived from publicly available Statcast data,
+retrievable through the \texttt{pybaseball} interface
+\citep{pybaseball}. The results reported in this manuscript use the designed
+synthetic validation corpus described in Section~\ref{sec:validation}, which is
+generated deterministically by the accompanying code. All analysis code,
+including the figure and table generation, will be made publicly available on
+acceptance.
 
-Failed challenges incur
-\begin{align}
-Penalty_i = -\left(\frac{\max(0, 9-\text{inning}_i)}{9}\right)EV_c,
-\end{align}
-so final value is
-\begin{align}
-cRV_i = \Delta RV_{pitch,i} + Penalty_i.
-\end{align}
+\section*{Acknowledgment}
+Omitted for blind review.
 
-\subsection{Edge Cases}
-Terminal pitch outcomes (strike-three / ball-four transitions represented as terminal states) are assigned zero immediate run expectancy in the mapped state. Extra-innings penalty is zero by definition due to inning-level challenge reset assumptions in the current specification.
+\section*{Funding}
+No external funding supported this work.
 
-\section{Data and Pipeline}
-The repository implements five core modules: ingestion, event filtering, alternate realities, RE288 mapping, and scoring. In the continued implementation phase, we also added a validation layer that produces bootstrap confidence intervals, inning-bucket leverage summaries, and $EV_c$ sensitivity outputs. All artifacts are generated with one command:
-\begin{quote}
-\texttt{python pipeline.py --output-dir outputs}
-\end{quote}
-which writes CSV summaries, SVG figures, and LaTeX-ready tables.
+\section*{Conflict of Interest}
+The author declares no conflict of interest.
 
-\section{Preliminary Results}
-Executable experiment outputs are written to \texttt{outputs/}. In this environment, the pipeline falls back to synthetic challenge events when full Statcast retrieval is unavailable. The produced artifacts include:
-\begin{itemize}
-    \item \texttt{challenge\_events\_scored.csv}
-    \item \texttt{player\_leaderboard.csv}
-    \item \texttt{challenger\_summary.csv}
-    \item SVG figures for leaderboard and challenger totals.
-\end{itemize}
+\newpage
+\section*{Figure Legends}
+\addcontentsline{toc}{section}{Figure Legends}
 
-\input{../outputs/tables/leaderboard_top10.tex}
-\input{../outputs/tables/validation_summary.tex}
+\noindent\textbf{Figure 1.} Five-module $cRV$ pipeline: ingestion, event
+isolation, alternate-state generation, RE288 mapping, and scoring. Each stage
+writes an inspectable intermediate file, so any challenge event can be traced
+from its raw description text through to its final score.
 
-Sensitivity outputs are also exported to \texttt{ev\_sensitivity.csv} and \texttt{figures/ev\_sensitivity.svg}, enabling rapid what-if analysis over plausible $EV_c$ assumptions.
+\vspace{1em}
+\noindent\textbf{Figure 2.} Player-level cumulative $cRV$ on the designed
+validation corpus. Bars extending right of the zero rule (blue) are positive
+and arise entirely from successful conversions; bars extending left (red) are
+negative and arise entirely from opportunity-cost penalties on failed
+challenges. Bar direction relative to the zero rule encodes the sign
+independently of color, so the comparison survives grayscale reproduction.
+Player names are synthetic.
 
-\section{Discussion}
-The current implementation now provides a stronger baseline for complete paper authorship: reproducible scoring, generated visual artifacts, and structured validation summaries that can be directly inserted into the manuscript. The added sensitivity layer is particularly useful for bounding model risk while $EV_c$ remains fixed in v1.
+\vspace{1em}
+\noindent\textbf{Figure 3.} Cumulative $cRV$ aggregated by challenger role
+(batter, catcher, and events whose role could not be parsed). The batter share
+is larger in this corpus, but that split reflects the composition of the
+designed validation events rather than an empirical finding about MLB play.
 
-\section{Limitations}
-Current results are still preliminary because challenge events can revert to synthetic fallback data when network/API extraction is unavailable. The RE288 surface is similarly a placeholder when an empirical matrix is not supplied. Consequently, numerical values in this draft are best interpreted as a systems-validation checkpoint rather than a final baseball estimate.
+\vspace{1em}
+\noindent\textbf{Figure 4.} Total corpus $cRV$ as a function of the baseline
+retained-challenge value $EV_c$, over the range $[0.05, 0.30]$ runs. The
+relationship is exactly linear because the opportunity-cost penalty applies
+only to failed challenges and scales linearly in $EV_c$; successful challenges
+carry no penalty term. Endpoint values are labeled.
 
-\section{Next Empirical Steps}
-Immediate work focuses on replacing synthetic components with full-season challenge logs, estimating RE288 from historical innings, and rerunning all tables/figures under those empirical inputs. Once complete, we will add uncertainty reporting by challenger role and game leverage strata.
-
-\section{Conclusion}
-$cRV$ offers a practical framework for measuring challenge strategy in the ABS era and is ready for expansion into full-season evaluation and player-level stability analysis.
-
-\bibliographystyle{plain}
+\newpage
 \bibliography{references}
 
 \end{document}

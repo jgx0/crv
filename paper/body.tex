@@ -1,0 +1,613 @@
+\section{Introduction}
+MLB's adoption of the Automated Ball-Strike (ABS) challenge system reframes
+pitch evaluation. Under the framing-era paradigm, catcher value at the margin
+of the strike zone was largely a function of receiving technique and umpire
+interaction \citep{marchi2013,fast2011,mlbframing}. A catcher earned runs by
+making borderline pitches \emph{look} like strikes, and the skill was
+continuous, repeatable, and accumulated over thousands of receptions per
+season.
+
+The ABS challenge system replaces that continuous skill with a discrete,
+scarce resource. Each team carries a limited number of challenges; a
+successful challenge is retained, a failed challenge is consumed. The
+strategic problem is therefore no longer ``how do I make this pitch look like
+a strike'' but ``is this pitch worth spending a challenge on, given how much
+game remains and how likely I am to be right.'' That is a resource-allocation
+problem over a nine-inning (or longer) horizon, and it is not measured by any
+existing public metric.
+
+Existing public ABS coverage has been largely descriptive: challenge rates,
+success percentages, and umpire-agreement rates \citep{mlbabs2024}. These are
+useful accuracy diagnostics but they are denominated in \emph{challenges}, not
+runs, and they are indifferent to context. A catcher who wins 60\% of his
+challenges on 0--0 counts in the first inning and a catcher who wins 60\% of
+his challenges on full counts with the bases loaded in the ninth have
+identical success rates and vastly different value.
+
+What has been missing is a unified, run-denominated valuation that (i)~credits
+the immediate state change produced by an overturn and (ii)~charges the
+opportunity cost of a failed challenge against the remaining game horizon.
+This paper formalizes that valuation as Challenge Run Value ($cRV$), implements
+it as an open and reproducible pipeline, and validates the implementation
+against a designed corpus of edge cases.
+
+\subsection{Contributions}
+\begin{enumerate}
+  \item A formal run-denominated metric, $cRV$, combining an RE288 pitch-state
+        delta with a time-decaying opportunity-cost penalty
+        (Section~\ref{sec:method}).
+  \item Correct treatment of plate-appearance-ending challenges---walk force
+        chains with runs scored, and strikeouts with out increments and
+        inning-end zeroing (Section~\ref{sec:terminal}). We show this is not a
+        detail: it is where nearly all of the metric's signal lives.
+  \item A reproducible five-module pipeline with provenance tracking, bootstrap
+        uncertainty, leverage stratification, and $EV_c$ sensitivity
+        (Section~\ref{sec:pipeline}).
+  \item A designed validation corpus and unit-test suite that exercises each
+        state-transition path, enabling regression-safe development
+        (Section~\ref{sec:validation}).
+\end{enumerate}
+
+\section{Related Work}
+Count-dependent run expectancy is foundational in sabermetric modeling
+\citep{tango2007}. The classical RE24 matrix conditions expected runs on the 24
+base-out states. The RE288 extension---8 base states $\times$ 3 outs $\times$
+12 counts---conditions additionally on the ball-strike count, which is
+precisely the dimension an ABS challenge manipulates
+\citep{baseballprospectusre}. Without the count dimension, a challenge that
+moves a count from 0--1 to 1--0 is invisible; RE288 makes it measurable.
+
+Catcher framing research established that called-strike environments are
+measurable and strategically relevant \citep{marchi2013,fast2011,mlbframing}.
+That literature is the natural predecessor to this work, and also its natural
+contrast: framing measured \emph{how often} borderline pitches were converted
+to strikes through receiving skill, whereas $cRV$ measures \emph{when} a
+challenge should be spent and \emph{whether} spending it paid off. Framing runs
+and $cRV$ are complementary rather than competing---in a full-ABS world the
+former decays toward zero while the latter becomes the live skill.
+
+Broader work on umpiring-context effects and decision incentives in sport
+\citep{scorecasting} motivates treating challenge usage as a constrained
+optimization problem rather than a pure accuracy skill. The opportunity-cost
+structure in $cRV$ is a deliberately simple instance of that framing: a
+resource with option value that decays as the game shortens.
+
+\section{Methodology}
+\label{sec:method}
+
+\subsection{Notation}
+For challenge event $i$, let the \emph{pre-pitch state} be the triple
+$(c_i, b_i, o_i)$ where $c_i$ is the ball-strike count, $b_i \in \{0,1\}^3$ is
+the base occupancy string (1B, 2B, 3B), and $o_i \in \{0,1,2\}$ is the out
+count. Let $RE(\cdot)$ denote the run value of a post-pitch state, defined to
+include both any runs scored immediately on the play and the run expectancy of
+the resulting state.
+
+Every challenge concerns a called pitch that the umpire (or ABS system) ruled
+either a ball or a strike. Two realities follow:
+\begin{itemize}
+  \item the \textbf{original} reality, in which the original call stands, and
+  \item the \textbf{overturned} reality, in which the call is reversed.
+\end{itemize}
+If the challenge fails, the overturned reality never materializes and the two
+coincide.
+
+\subsection{Pitch-state delta}
+\begin{align}
+\Delta RV_{pitch,i} &=
+\begin{cases}
+RE(\text{overturned}_i) - RE(\text{original}_i)
+  & \text{batter challenge succeeds}, \\[4pt]
+RE(\text{original}_i) - RE(\text{overturned}_i)
+  & \text{catcher challenge succeeds}, \\[4pt]
+0 & \text{challenge fails}.
+\end{cases}
+\end{align}
+
+The sign convention encodes whose interest the challenge serves. Run
+expectancy is always stated from the batting team's perspective, so a batter
+benefits when the overturn \emph{raises} RE (a strike becomes a ball) and a
+catcher benefits when the overturn \emph{lowers} it (a ball becomes a strike).
+Taking the catcher's delta as $RE_{\text{original}} - RE_{\text{overturned}}$
+makes a successful defensive challenge score positive, so that $cRV$ is
+directly comparable across roles.
+
+Failed challenges leave the on-field state unchanged. The pitch delta is
+exactly zero---not merely small---because the umpire's call stands and play
+proceeds from the original reality.
+
+\subsection{Opportunity-cost penalty}
+Let $EV_c$ be the baseline expected value of \emph{retaining} a challenge. In
+v1 we fix $EV_c = 0.15$ runs as a transparent constant; Section
+\ref{sec:sensitivity} reports sensitivity over $[0.05, 0.30]$. Conceptually,
+\begin{align}
+EV_c = P(\text{future need}) \times P(\text{win}) \times
+       \overline{\Delta RV}_{\text{late}},
+\end{align}
+the probability a challenge will be wanted again, times the conversion rate,
+times the average value of a late-game conversion. Estimating each factor from
+data is deferred to future work (Section~\ref{sec:future}).
+
+Failed challenges incur
+\begin{align}
+Penalty_i = -\left(\frac{\max(0,\, 9 - \mathrm{inning}_i)}{9}\right) EV_c.
+\label{eq:penalty}
+\end{align}
+
+Three properties of Equation~\ref{eq:penalty} deserve comment. First,
+successful challenges are retained under ABS rules, so $Penalty_i = 0$ on
+wins---the resource was not consumed. Second, the penalty is \emph{linearly
+decaying} in the inning: a failed first-inning challenge forfeits eight innings
+of option value and is charged $-(8/9)EV_c$, whereas a failed ninth-inning
+challenge forfeits nothing and is charged zero. Third, extra innings floor at
+zero via the $\max(0,\cdot)$ term, consistent with inning-level challenge
+resets.
+
+The linear decay is a modeling choice, not a derived result. It is the
+simplest functional form with the correct boundary behavior (maximal early,
+zero at game end), and it avoids introducing free parameters that the current
+data cannot identify. A convex decay---reflecting that late innings are more
+leveraged per inning than early ones---is a plausible refinement.
+
+\subsection{Unified metric}
+\begin{align}
+cRV_i = \Delta RV_{pitch,i} + Penalty_i.
+\end{align}
+Because exactly one of the two terms is nonzero for any given event
+(successes have no penalty, failures have no delta), $cRV$ decomposes cleanly:
+positive values come entirely from conversions, negative values entirely from
+wasted challenges.
+
+\subsection{Terminal outcomes}
+\label{sec:terminal}
+The central modeling question is how to value challenges that \emph{end the
+plate appearance}. A called strike on an 0--0 count merely moves the count; a
+called strike on a 3--2 count ends the at-bat. Since challenges are
+disproportionately spent on full counts and two-strike counts---exactly where
+the stakes are highest---getting terminal outcomes right dominates the metric's
+behavior.
+
+We handle three cases:
+
+\paragraph{Walk (Ball~4).} Runners advance under standard force rules: the
+batter takes first; a runner on first is forced to second; a runner on second
+advances only if first was occupied; a runner on third scores only if the bases
+were loaded. Any forced run is added immediately to the state's value. Remaining
+run expectancy is then looked up at the post-walk base state, unchanged outs,
+and a reset $0$--$0$ count (a new batter is up).
+
+\paragraph{Strikeout (Strike~3).} Outs increment by one. If outs reach three,
+the half-inning ends and the remaining run expectancy is zero. Otherwise RE is
+looked up at the same bases, outs$+1$, and a reset $0$--$0$ count. A pure
+strikeout scores no runs, so the immediate-runs term is zero.
+
+\paragraph{Non-terminal count change.} Bases and outs are unchanged; only the
+count state updates in the RE288 lookup. These are the low-magnitude events---an
+0--1 to 1--0 swing is worth a few hundredths of a run.
+
+Formal transition rules are given in Appendix~\ref{app:transitions}.
+
+\subsection{Why the terminal treatment matters}
+Earlier drafts of this pipeline assigned $RE = 0$ to \emph{all} terminal
+states, on the reasoning that a completed plate appearance has no
+count-conditioned run expectancy. That is a category error: the plate
+appearance ends, but the \emph{inning} does not. A bases-loaded walk leaves
+the bases loaded with a run already in; a strikeout with one out leaves runners
+on with two outs. Both states carry substantial run expectancy.
+
+The practical consequence was severe. Under the old treatment, the
+bases-loaded walk conversion in our validation corpus scored $\Delta RV = 0$
+instead of $+1.32$ runs, and the inning-ending strikeout conversion scored $0$
+instead of $+0.46$. Mean $cRV$ across the corpus was $-0.016$---the metric
+reported that challenging was, on net, \emph{harmful}, because only the
+penalties survived. After the correction, mean $cRV$ is $+0.193$. The sign of
+the headline result flipped on this one modeling decision.
+
+\section{Data and Pipeline}
+\label{sec:pipeline}
+The repository implements five core modules plus a validation layer
+(Figure~\ref{fig:pipeline}):
+
+\begin{enumerate}
+  \item \textbf{Ingestion} (\texttt{ingestion.py}): Statcast pitch-by-pitch
+        pull via \texttt{pybaseball}, defaulting to the 2026 ABS-era window.
+        Returns an empty frame on network failure rather than raising, so the
+        pipeline degrades gracefully.
+  \item \textbf{Event isolation} (\texttt{events.py}): filters the
+        \texttt{des} field for challenge language, infers challenger role
+        (batter/catcher), called pitch type, and success/failure, and flags
+        parse-quality issues.
+  \item \textbf{Alternate realities} (\texttt{realities.py}): from the
+        pre-pitch count, bases, and outs, constructs the umpire-call state
+        and the overturned state, including walk force chains and
+        strikeout out increments.
+  \item \textbf{RE288 mapping} (\texttt{re288.py}): loads an empirical matrix
+        estimated from play-by-play when available, else a structured
+        synthetic surface; maps both realities to run values.
+  \item \textbf{Scoring} (\texttt{calculate.py}): applies $\Delta RV$ and the
+        opportunity-cost penalty.
+\end{enumerate}
+
+\crvfigure{fig:pipeline}{pipeline_diagram}{1.0}
+
+\subsection{Event isolation and parse quality}
+Challenge events are identified from free-text descriptions requiring both
+challenge language and an outcome token (``overturned'' / ``upheld'' /
+``stands''). Role and called-pitch-type are inferred from the same text. When
+inference fails---for example a description reading only ``Challenge overturned
+to a ball'' with no role named---the event is retained but flagged via a
+\texttt{parse\_quality} column rather than silently dropped or silently
+mis-assigned.
+
+This matters for honest accounting: in the synthetic corpus, 1 of 10 events
+carries a \texttt{missing\_challenger} flag. Such events contribute zero to
+$\Delta RV$ (no role means no sign convention) and appear as an
+\texttt{unknown} row in the role summary. Production ABS feeds with structured
+challenge flags would eliminate this ambiguity entirely.
+
+\subsection{RE288 estimation}
+The empirical estimator groups play-by-play pitches by
+(base state, outs, count), computes runs scored from that pitch to the end of
+the half-inning, and averages. It also reports a per-cell
+\texttt{sample\_size}, since rare states---3--0 counts with the bases loaded
+and two outs---are noisy and a multi-season baseline is required for stability.
+
+When no play-by-play is available, a structured synthetic surface is used:
+$RE = 0.56 + 0.18r - 0.32o + 0.04b - 0.03s$, where $r$ is runners on base, $o$
+is outs, and $b, s$ are balls and strikes. This is monotone in the right
+directions and adequate for exercising the pipeline, but it is not a baseball
+estimate and results derived from it are labeled accordingly.
+
+\subsection{Provenance and reproducibility}
+All artifacts regenerate with:
+\begin{quote}
+\texttt{python pipeline.py --output-dir outputs}\\
+\texttt{python pipeline.py --force-synthetic  \# offline demo corpus}
+\end{quote}
+A \texttt{run\crvus{}metadata.csv} records the data source
+(\texttt{statcast}\slash\texttt{synthetic}) and RE288 source
+(\texttt{empirical}\slash\texttt{synthetic}\slash\texttt{csv}) for every run, so
+no figure in this paper can be silently misattributed to real data.
+
+\section{Validation Design}
+\label{sec:validation}
+Because full-season challenge data is not yet available in this environment,
+correctness is established against a \emph{designed} corpus rather than a
+random sample. The 10 synthetic events were constructed to exercise every
+state-transition path:
+
+\begin{itemize}
+  \item non-terminal count changes (0--0 strike overturned to a ball),
+  \item a bases-loaded walk conversion (run forced in, bases stay loaded),
+  \item an inning-ending strikeout conversion (RE drops to zero),
+  \item a two-out strikeout that does \emph{not} end the inning,
+  \item an extra-inning failure (penalty must be exactly zero),
+  \item early and late failures (penalty must scale with innings remaining),
+  \item a parse-ambiguous description (role inference must fail loudly).
+\end{itemize}
+
+A unit-test suite (\texttt{tests/}) asserts the expected behavior of each path
+independently of the pipeline---walk force chains for all eight base states,
+terminal RE zeroing, extra-inning penalty nullification, and parser role
+extraction. All tests pass on the current implementation.
+
+\section{Preliminary Results}
+\label{sec:results}
+Executable outputs live in \texttt{outputs/}. The figures below use the
+synthetic validation corpus ($n=10$, success rate $60\%$) under the synthetic
+RE288 surface, with $EV_c = 0.15$. \textbf{These are systems-validation
+figures, not baseball estimates.}
+
+\input{../outputs/tables/validation_summary.tex}
+
+Mean $cRV$ is positive, at $0.193$ runs per event, with a seeded bootstrap
+95\% CI of $[0.000,\,0.487]$, whose lower bound is marginally below zero
+before rounding. The interval is wide, as expected at $n=10$, and
+that width is itself a feature of the validation harness: it will tighten
+automatically on full-season data without any code change. The lower bound sits
+essentially on zero, so the corpus does not establish that mean $cRV$ differs
+from zero, and no substantive claim should rest on the point estimate at this
+sample size. The bootstrap is seeded, so these bounds reproduce exactly on
+re-run.
+
+\input{../outputs/tables/leaderboard_top10.tex}
+
+\input{../outputs/tables/challenger_summary.tex}
+
+Figure~\ref{fig:leaderboard} shows the player-level distribution and
+Figure~\ref{fig:challenger} the same totals aggregated by role. The shape is
+the one the framework predicts: a small number of terminal-state conversions
+carry nearly all the positive value, while failures contribute a thin band of
+small negative values whose magnitude is set entirely by inning.
+
+\crvfigure{fig:leaderboard}{leaderboard_top10}{0.9}
+
+\crvfigure{fig:challenger}{challenger_totals}{0.8}
+
+\subsection{Case studies}
+Three events illustrate the model's economic content. Each is traced from
+pre-pitch state to final score.
+
+\paragraph{Bases-loaded walk conversion (Sample Batter E, $+1.32$).}
+Pre-pitch: bases loaded, 1 out, 3--2 count. The umpire calls strike three. The
+batter challenges and wins, converting the pitch to ball four.
+\begin{itemize}
+  \item \emph{Original reality:} strikeout. Outs $1 \to 2$, bases loaded
+        unchanged, count resets. $RE(\text{original}) \approx 0.46$.
+  \item \emph{Overturned reality:} walk. Runner from third is forced home
+        ($+1$ run), bases remain loaded, outs stay at 1.
+        $RE(\text{overturned}) = 1.00 + 0.78 \approx 1.78$.
+\end{itemize}
+Batter delta: $1.78 - 0.46 = 1.32$ runs. No penalty (challenge retained).
+This single event is worth more than every other event in the corpus combined,
+which is the correct economic answer: a forced run plus the difference between
+one and two outs with the bases loaded is an enormous swing.
+
+\paragraph{Ninth-inning strikeout conversion (Sample Catcher C, $+0.46$).}
+Pre-pitch: runners on first and second, 2 outs, 3--2 count. The umpire calls
+ball four. The catcher challenges and wins, converting the walk into strike
+three.
+\begin{itemize}
+  \item \emph{Original reality:} walk. Bases loaded, still 2 outs.
+        $RE(\text{original}) \approx 0.46$.
+  \item \emph{Overturned reality:} strikeout, third out. Inning over.
+        $RE(\text{overturned}) = 0$.
+\end{itemize}
+Catcher delta: $0.46 - 0 = 0.46$ runs. This is the case the old
+zero-everything treatment got most wrong---it scored the inning-ending
+conversion at exactly zero.
+
+\paragraph{Early failed challenge (Sample Batter D, $-0.117$).}
+A second-inning failed batter challenge yields $\Delta RV = 0$ and
+$Penalty = -(7/9) \times 0.15 \approx -0.117$. Compare the tenth-inning
+failure by Sample Catcher F, which yields exactly $0.00$. Same outcome, same
+accuracy, ten-fold difference in cost---this is the resource-management
+incentive the framework exists to encode.
+
+\subsection{Leverage stratification}
+\input{../outputs/tables/leverage_summary.tex}
+
+Mid- and late-inning buckets dominate aggregate value in this corpus, driven by
+the two terminal conversions above. The early bucket is net negative: it
+contains only failures, which is by construction of the corpus but also
+reflects the real strategic asymmetry---early challenges have the most to lose
+and, on average, the least to gain.
+
+\subsection{Sensitivity to $EV_c$}
+\label{sec:sensitivity}
+\input{../outputs/tables/ev_sensitivity.tex}
+
+\crvfigure{fig:sensitivity}{ev_sensitivity}{0.85}
+
+Total corpus $cRV$ ranges from $2.03$ at $EV_c = 0.05$ to $1.78$ at
+$EV_c = 0.30$ (Figure~\ref{fig:sensitivity}), a spread of $0.25$ runs across a
+sixfold change in the
+parameter. The relationship is exactly linear: from Equation~\ref{eq:penalty},
+$\sum_i cRV_i = \sum_i \Delta RV_i - EV_c \sum_{i \in \text{fail}}
+(9 - \mathrm{inning}_i)/9$, and only the second term depends on $EV_c$.
+
+Two conclusions follow. First, the sign of mean $cRV$ is invariant across the
+entire plausible range---the conclusion that challenging adds value is not an
+artifact of the $EV_c$ choice. Second, the \emph{ranking} of successful
+high-leverage events is completely invariant to $EV_c$, since successes carry
+no penalty term at all. $EV_c$ affects only how harshly failures are judged
+relative to one another, and even there it is a monotone rescaling.
+
+\section{Discussion}
+\subsection{Managerial implications}
+Under this framework, challenging a borderline strike on an 0--0 count is
+rarely justified. The count move (0--1 $\to$ 1--0) is worth roughly $0.07$
+runs in our surface, while a first-inning miss costs $-(8/9) \times 0.15
+\approx -0.13$ runs. Break-even therefore requires a win probability above
+roughly 65\%---higher than typical challenge success rates. The asymmetry only
+worsens earlier in the game.
+
+By contrast, full-count terminal challenges---especially with runners on and
+two outs---can swing between half a run and a run and a half of expectancy.
+At those magnitudes, break-even win probability falls into the low single
+digits of percent. Players should be instructed to spend challenges almost
+freely on plate-appearance-ending calls with runners in scoring position, and
+almost never on early-count calls with the bases empty.
+
+More generally, cumulative $cRV$ is a decision-quality signal distinct from raw
+challenge accuracy. A catcher who goes 5-for-10 on low-leverage challenges may
+post a worse $cRV$ than one who goes 3-for-5 exclusively in high-leverage
+spots. Accuracy measures the eye; $cRV$ measures the judgment.
+
+\subsection{Game-theoretic spillovers}
+Once a team has exhausted its challenges, the strategic environment changes for
+both sides. Pitchers may expand the zone and catchers may set up further off
+the plate, knowing borderline takes cannot be reviewed. Conversely, a team
+holding challenges late exerts a deterrent effect that never appears in any
+box score.
+
+$cRV$ as currently specified prices neither effect. It values challenges
+actually thrown, not the option value of challenges held. A complete
+game-theoretic treatment would model the equilibrium zone expansion as a
+function of remaining challenges on both sides---a substantially harder problem
+requiring pitch-location data and a behavioral model of umpire and pitcher
+response.
+
+\subsection{Relationship to framing}
+In a full-ABS-challenge world, framing runs should compress toward zero for
+challenged pitches while remaining live for unchallenged ones. The two metrics
+therefore partition the borderline-pitch value space: framing governs the
+pitches nobody reviews, $cRV$ governs the ones somebody does. A complete
+catcher valuation in the ABS era plausibly sums the two, though care is needed
+to avoid double-counting pitches that were framed \emph{and} challenged.
+
+\section{Limitations}
+\begin{itemize}
+  \item \textbf{Data source.} Results in this draft use a synthetic challenge
+        corpus, because Statcast was unreachable in this environment.
+        Numerical values are a methodological checkpoint, not a 2026 player
+        ranking, and the ``Sample'' player names are deliberate.
+  \item \textbf{RE288 surface.} The default matrix is a structured synthetic
+        approximation with a linear functional form. Empirical multi-season
+        estimation is implemented
+        (\texttt{estimate\crvus{}empirical\crvus{}re288\crvus{}matrix}) and will replace the
+        fallback once historical play-by-play is wired into production runs.
+  \item \textbf{Sample size.} $n = 10$ is a validation corpus, not a sample.
+        The bootstrap interval is correspondingly wide and no inferential claim
+        should be drawn from it.
+  \item \textbf{Fixed $EV_c$.} The baseline challenge value is a hardcoded
+        constant rather than an estimated quantity. Section
+        \ref{sec:sensitivity} bounds the resulting model risk but does not
+        eliminate it.
+  \item \textbf{Linear decay assumption.} The penalty decays linearly in
+        innings remaining. This has correct boundary behavior but no empirical
+        justification; a convex decay may better reflect late-inning leverage.
+  \item \textbf{Parse ambiguity.} Role inference from free-text descriptions
+        can fail (1/10 events in the synthetic corpus). Production feeds with
+        structured challenge flags would eliminate this.
+  \item \textbf{No win-probability layer.} $cRV$ is run-denominated, not
+        win-denominated. A one-run swing in a blowout and in a tie game score
+        identically. Leverage-index or WPA overlays are not yet applied.
+  \item \textbf{Challenges held are unpriced.} The metric values challenges
+        spent, not the deterrent or option value of challenges retained.
+\end{itemize}
+
+\section{Future Work}
+\label{sec:future}
+Immediate priorities, roughly in dependency order:
+\begin{enumerate}
+  \item Replace synthetic inputs with full 2026 Statcast challenge extraction.
+  \item Build a multi-season empirical RE288 matrix and report per-cell sample
+        sizes, flagging low-$n$ states as unstable.
+  \item Validate description parsers against official ABS game logs and
+        quantify false-positive and false-negative rates.
+  \item Estimate $EV_c$ empirically as
+        $P(\text{need}) \times P(\text{win}) \times
+        \overline{\Delta RV}_{\text{late}}$ from league-wide challenge data.
+  \item Test the linear-decay assumption against an empirically estimated
+        option-value curve.
+  \item Add year-over-year stability and split-half reliability analysis for
+        player $cRV$, to establish whether challenge judgment is a skill or
+        noise.
+  \item Explore dynamic $P(\text{win})$ conditioned on pitch location and
+        historical umpire/ABS agreement rates, enabling a prospective
+        ``should you challenge this?'' model rather than a retrospective score.
+  \item Layer win probability over run expectancy for a WPA-denominated
+        variant.
+\end{enumerate}
+
+\section{Conclusion}
+$cRV$ provides a practical, run-based framework for measuring challenge
+strategy in the ABS era. By pairing RE288 state deltas---including correct walk
+and strikeout transitions---with a transparent opportunity-cost penalty, the
+metric distinguishes high-leverage conversion skill from reckless early usage,
+a distinction invisible to raw success rates.
+
+The methodological finding we would most emphasize is the terminal-outcome
+treatment. Plate-appearance-ending challenges are simultaneously the most
+common high-leverage challenges and the easiest to model incorrectly; zeroing
+them inverts the sign of the headline result. Any future implementation of a
+challenge-valuation metric should treat walk force chains and strikeout out
+increments as first-class cases, not edge cases.
+
+The accompanying open pipeline makes every table and figure in this draft
+regenerable from a single command, with provenance tracking that prevents
+synthetic results from being mistaken for empirical ones. The project is
+positioned for full-season empirical estimation as soon as stable challenge
+feeds are available.
+
+\appendix
+\section{State-Transition Rules}
+\label{app:transitions}
+
+Let the pre-pitch state be count $(b, s)$, base string
+$\beta = \beta_1\beta_2\beta_3$, and outs $o$.
+
+\subsection{Called strike}
+\begin{align}
+(b, s) \to
+\begin{cases}
+(b, s+1), \; \beta, \; o & \text{if } s + 1 < 3 \quad \text{(non-terminal)},\\
+(0,0), \; \beta, \; o+1 & \text{if } s + 1 = 3, \; o + 1 < 3
+  \quad \text{(strikeout)},\\
+\text{inning over}, \; RE = 0 & \text{if } s + 1 = 3, \; o + 1 = 3.
+\end{cases}
+\end{align}
+Runs scored on the play: $0$ in all cases.
+
+\subsection{Called ball}
+\begin{align}
+(b, s) \to
+\begin{cases}
+(b+1, s), \; \beta, \; o & \text{if } b + 1 < 4 \quad \text{(non-terminal)},\\
+(0,0), \; \beta', \; o & \text{if } b + 1 = 4 \quad \text{(walk)},
+\end{cases}
+\end{align}
+where the post-walk base string $\beta'$ and runs scored $\rho$ follow the
+force chain:
+\begin{align}
+\beta'_1 &= 1 \quad \text{(batter to first, always)},\\
+\beta'_2 &= \begin{cases} 1 & \text{if } \beta_1 = 1 \text{ (forced)},\\
+                          \beta_2 & \text{otherwise},\end{cases}\\
+\beta'_3 &= \begin{cases} 1 & \text{if } \beta_1 = \beta_2 = 1
+                              \text{ (forced from second)},\\
+                          \beta_3 & \text{otherwise},\end{cases}\\
+\rho &= \begin{cases} 1 & \text{if } \beta = 111 \text{ (bases loaded)},\\
+                      0 & \text{otherwise}.\end{cases}
+\end{align}
+
+Enumerating all eight base states:
+
+\begin{table}[h]
+\centering
+\caption{Walk force chain for all base states.}
+\label{tab:forcechain}
+\begin{tabular}{llll}
+\toprule
+Pre-walk $\beta$ & Description & Post-walk $\beta'$ & Runs $\rho$ \\
+\midrule
+000 & empty          & 100 & 0 \\
+100 & 1B             & 110 & 0 \\
+010 & 2B             & 110 & 0 \\
+001 & 3B             & 101 & 0 \\
+110 & 1B, 2B         & 111 & 0 \\
+101 & 1B, 3B         & 111 & 0 \\
+011 & 2B, 3B         & 111 & 0 \\
+111 & loaded         & 111 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note the unforced cases: with a runner on second only ($010$), the batter takes
+first and the runner \emph{holds}, giving $110$. With runners on second and
+third ($011$), both hold and the batter takes first, giving $111$ with no run
+scored---the runner on third is not forced.
+
+\subsection{Overturn mapping}
+An overturned called strike is evaluated as a called ball, and an overturned
+called ball as a called strike. If the challenge fails, the overturned reality
+is set equal to the original reality, guaranteeing $\Delta RV = 0$ by
+construction rather than by a separate branch.
+
+\subsection{State value}
+\begin{align}
+RE(\text{state}) =
+\begin{cases}
+\rho & \text{if inning over or } o \geq 3,\\
+\rho + RE288(\beta, o, \text{count}) & \text{otherwise}.
+\end{cases}
+\end{align}
+
+\section{Reproducing the Results}
+\label{app:repro}
+\begin{quote}
+\begin{verbatim}
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python pipeline.py --force-synthetic --output-dir outputs
+python -m pytest tests/ -q
+cd paper && make paper
+\end{verbatim}
+\end{quote}
+Every table in Section~\ref{sec:results} is generated by the pipeline and
+included via \verb|\input|; rerunning the pipeline updates the manuscript
+automatically. A \texttt{run\_metadata.csv} artifact records the data
+provenance for the run that produced the current tables. The analysis code and
+the data-generating scripts will be deposited in a public repository on
+acceptance; the repository is omitted here to preserve blind review.
+

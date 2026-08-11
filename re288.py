@@ -68,11 +68,11 @@ def estimate_empirical_re288_matrix(pbp_df: pd.DataFrame) -> pd.DataFrame:
 
     out = (
         df.groupby(["base_state", "outs", "count_state"], dropna=False)["runs_remaining"]
-        .mean()
+        .agg(expected_runs="mean", sample_size="count")
         .reset_index()
-        .rename(columns={"runs_remaining": "expected_runs"})
     )
     out["expected_runs"] = pd.to_numeric(out["expected_runs"], errors="coerce").fillna(0.0).round(3)
+    out["sample_size"] = pd.to_numeric(out["sample_size"], errors="coerce").fillna(0).astype(int)
     return out
 
 
@@ -87,8 +87,47 @@ def load_re288_matrix(path: Optional[str] = None, pbp_df: Optional[pd.DataFrame]
     return _synthetic_re288_matrix()
 
 
+def _lookup_re(
+    matrix: pd.DataFrame,
+    base_state: str,
+    outs: int,
+    count_state: str,
+) -> float:
+    """Look up expected runs for a single base-out-count state."""
+    if outs >= 3:
+        return 0.0
+    match = matrix[
+        (matrix["base_state"] == base_state)
+        & (matrix["outs"] == outs)
+        & (matrix["count_state"] == count_state)
+    ]
+    if match.empty:
+        return 0.0
+    return float(match.iloc[0]["expected_runs"])
+
+
+def _state_run_value(
+    matrix: pd.DataFrame,
+    *,
+    base_state: str,
+    outs: int,
+    count_state: str,
+    inning_over: bool,
+    runs_on_play: int,
+) -> float:
+    """Total value of a post-pitch state: immediate runs + remaining RE."""
+    if inning_over or outs >= 3:
+        return float(runs_on_play)
+    return float(runs_on_play) + _lookup_re(matrix, base_state, outs, count_state)
+
+
 def map_re288(challenges_df: pd.DataFrame, re288_matrix: pd.DataFrame) -> pd.DataFrame:
-    """Map RE_Reality and RE_Challenge onto challenge events."""
+    """Map RE_Reality and RE_Challenge onto challenge events.
+
+    Non-terminal count changes keep pre-pitch bases/outs and use the post-call count.
+    Terminal walks use post-walk bases, same outs, 0-0 count, plus runs scored on the play.
+    Terminal strikeouts use same bases, outs+1 (or 0 if inning ends), 0-0 count.
+    """
     if challenges_df is None or challenges_df.empty:
         return pd.DataFrame()
 
@@ -98,29 +137,53 @@ def map_re288(challenges_df: pd.DataFrame, re288_matrix: pd.DataFrame) -> pd.Dat
         df["RE_Challenge"] = 0.0
         return df
 
-    reality = re288_matrix.rename(
-        columns={"count_state": "original_count_state", "expected_runs": "RE_Reality"}
-    )
-    df = df.merge(
-        reality[["base_state", "outs", "original_count_state", "RE_Reality"]],
-        on=["base_state", "outs", "original_count_state"],
-        how="left",
-    )
+    matrix = re288_matrix.copy()
+    matrix["outs"] = pd.to_numeric(matrix["outs"], errors="coerce").fillna(0).astype(int)
+    matrix["expected_runs"] = pd.to_numeric(matrix["expected_runs"], errors="coerce").fillna(0.0)
 
-    challenge = re288_matrix.rename(
-        columns={"count_state": "overturned_count_state", "expected_runs": "RE_Challenge"}
-    )
-    df = df.merge(
-        challenge[["base_state", "outs", "overturned_count_state", "RE_Challenge"]],
-        on=["base_state", "outs", "overturned_count_state"],
-        how="left",
-    )
+    # Ensure required post-state columns exist for older synthetic paths.
+    for col, default in (
+        ("original_base_state", "base_state"),
+        ("overturned_base_state", "base_state"),
+        ("original_outs", "outs"),
+        ("overturned_outs", "outs"),
+        ("original_runs_on_play", 0),
+        ("overturned_runs_on_play", 0),
+        ("original_inning_over", False),
+        ("overturned_inning_over", False),
+        ("original_terminal", False),
+        ("overturned_terminal", False),
+    ):
+        if col not in df.columns:
+            if isinstance(default, str) and default in df.columns:
+                df[col] = df[default]
+            else:
+                df[col] = default
 
-    df["RE_Reality"] = pd.to_numeric(df["RE_Reality"], errors="coerce").fillna(0.0)
-    df["RE_Challenge"] = pd.to_numeric(df["RE_Challenge"], errors="coerce").fillna(0.0)
+    re_reality = []
+    re_challenge = []
+    for _, row in df.iterrows():
+        re_reality.append(
+            _state_run_value(
+                matrix,
+                base_state=str(row.get("original_base_state", row.get("base_state", "000"))),
+                outs=int(row.get("original_outs", row.get("outs", 0))),
+                count_state=str(row.get("original_count_state", "0-0")),
+                inning_over=bool(row.get("original_inning_over", False)),
+                runs_on_play=int(row.get("original_runs_on_play", 0) or 0),
+            )
+        )
+        re_challenge.append(
+            _state_run_value(
+                matrix,
+                base_state=str(row.get("overturned_base_state", row.get("base_state", "000"))),
+                outs=int(row.get("overturned_outs", row.get("outs", 0))),
+                count_state=str(row.get("overturned_count_state", "0-0")),
+                inning_over=bool(row.get("overturned_inning_over", False)),
+                runs_on_play=int(row.get("overturned_runs_on_play", 0) or 0),
+            )
+        )
 
-    # Edge case: inning-ending strike-3/ball-4 states represented as terminal outcomes are fixed to 0.
-    df.loc[df.get("original_terminal", False), "RE_Reality"] = 0.0
-    df.loc[df.get("overturned_terminal", False), "RE_Challenge"] = 0.0
-
+    df["RE_Reality"] = re_reality
+    df["RE_Challenge"] = re_challenge
     return df

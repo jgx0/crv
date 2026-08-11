@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
+import numpy as np
 import pandas as pd
 
 try:
@@ -10,8 +11,15 @@ try:
 except ImportError:  # pragma: no cover
     from calculate import EV_C
 
+# Bootstrap resampling seed. Fixed so the reported confidence intervals are
+# reproducible: the paper cites the CI bounds in prose, and an unseeded RNG
+# made the table disagree with the text on every re-run.
+BOOTSTRAP_SEED = 20260810
 
-def _bootstrap_mean_ci(values: pd.Series, n_boot: int = 1000, alpha: float = 0.05) -> tuple[float, float]:
+
+def _bootstrap_mean_ci(
+    values: pd.Series, n_boot: int = 1000, alpha: float = 0.05, seed: int = BOOTSTRAP_SEED
+) -> tuple[float, float]:
     sample = pd.to_numeric(values, errors="coerce").dropna()
     if sample.empty:
         return 0.0, 0.0
@@ -19,10 +27,11 @@ def _bootstrap_mean_ci(values: pd.Series, n_boot: int = 1000, alpha: float = 0.0
         value = float(sample.iloc[0])
         return value, value
 
-    rng = pd.Series(range(n_boot))
-    draws = rng.apply(lambda _: float(sample.sample(n=len(sample), replace=True).mean()))
-    lower = float(draws.quantile(alpha / 2))
-    upper = float(draws.quantile(1 - alpha / 2))
+    rng = np.random.default_rng(seed)
+    arr = sample.to_numpy(dtype=float)
+    draws = rng.choice(arr, size=(n_boot, len(arr)), replace=True).mean(axis=1)
+    lower = float(np.quantile(draws, alpha / 2))
+    upper = float(np.quantile(draws, 1 - alpha / 2))
     return lower, upper
 
 
@@ -32,7 +41,7 @@ def build_validation_summary(scored_df: pd.DataFrame, n_boot: int = 1000) -> pd.
         return pd.DataFrame(
             [
                 {
-                    "metric": "total_events",
+                    "metric": "Total events",
                     "value": 0.0,
                     "ci_lower": 0.0,
                     "ci_upper": 0.0,
@@ -48,9 +57,9 @@ def build_validation_summary(scored_df: pd.DataFrame, n_boot: int = 1000) -> pd.
 
     return pd.DataFrame(
         [
-            {"metric": "total_events", "value": total_events, "ci_lower": total_events, "ci_upper": total_events, "notes": "Count of challenge events"},
-            {"metric": "success_rate", "value": success_rate, "ci_lower": 0.0, "ci_upper": 1.0, "notes": "Share of successful challenges"},
-            {"metric": "mean_cRV", "value": mean_crv, "ci_lower": ci_low, "ci_upper": ci_high, "notes": "Bootstrap CI for mean cRV"},
+            {"metric": "Total events", "value": total_events, "ci_lower": total_events, "ci_upper": total_events, "notes": "Count of challenge events"},
+            {"metric": "Success rate", "value": success_rate, "ci_lower": 0.0, "ci_upper": 1.0, "notes": "Share of successful challenges"},
+            {"metric": "Mean cRV", "value": mean_crv, "ci_lower": ci_low, "ci_upper": ci_high, "notes": "Bootstrap CI for mean cRV"},
         ]
     )
 

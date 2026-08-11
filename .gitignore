@@ -1,2 +1,15 @@
 __pycache__/
 *.pyc
+.venv/
+venv/
+.env
+.DS_Store
+*.egg-info/
+.pytest_cache/
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.pdf
