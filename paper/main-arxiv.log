@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.22)  13 AUG 2026 18:20
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.22)  13 AUG 2026 19:11
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -715,10 +715,6 @@ Underfull \hbox (badness 10000) in paragraph at lines 292--308
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `main-arxiv.out' has not changed.
 (rerunfilecheck)             Checksum: CF8737B496080CF640FDD9DAE3921FA0;5214.
  ) 
@@ -741,7 +737,7 @@ e/2026/texmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2026/texm
 f-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2026/texmf-dist/fon
 ts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/u
 rw/times/utmri8a.pfb>
-Output written on main-arxiv.pdf (19 pages, 281103 bytes).
+Output written on main-arxiv.pdf (19 pages, 280326 bytes).
 PDF statistics:
  543 PDF objects out of 1000 (max. 8388607)
  465 compressed objects within 5 object streams
