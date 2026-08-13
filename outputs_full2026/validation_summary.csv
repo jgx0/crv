@@ -1,0 +1,4 @@
+metric,value,ci_lower,ci_upper,notes
+Total events,1914.0,1914.0,1914.0,Count of challenge events
+Success rate,0.45977011494252873,0.0,1.0,Share of successful challenges
+Mean cRV,0.1434456635318704,0.12964791884360852,0.15807991553465692,Bootstrap CI for mean cRV

@@ -1,0 +1,5 @@
+key,value
+data_source,statcast
+re288_source,empirical
+n_events,1914
+n_re288_states,288
