@@ -27,8 +27,8 @@ JQAS:
    plate-appearance-ending ones. We show that correctly valuing these
    terminal transitions (walk force chains and strikeout out-increments) —
    rather than zeroing them — flips the sign of the headline result: mean
-   $cRV$ is $+0.145$ runs per challenge, but zeroing terminal states drives
-   it to $-0.031$. Any future challenge-valuation metric inherits this
+   $cRV$ is $+0.159$ runs per challenge, but zeroing terminal states drives
+   it to $-0.016$. Any future challenge-valuation metric inherits this
    sensitivity.
 
 2. **The retained-challenge option value is empirically calibratable.** We
