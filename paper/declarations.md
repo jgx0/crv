@@ -22,9 +22,9 @@ review & editing; Visualization.
 
 The pitch-level inputs are publicly available Statcast data, retrieved through
 the `pybaseball` interface. The analysis code and the deterministic synthetic
-validation corpus described in the manuscript will be deposited in a public,
-persistent repository (Zenodo) and assigned a citable DOI on acceptance; the
-DOI will be added to the reference list at that time.
+validation corpus described in the manuscript are deposited in a public,
+persistent repository (Zenodo) at
+<https://doi.org/10.5281/zenodo.21924168>.
 
 ## Human and animal subjects
 

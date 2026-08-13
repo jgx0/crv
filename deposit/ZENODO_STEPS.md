@@ -71,24 +71,14 @@ Copy-paste these fields exactly:
 
 ## 6. After publishing — wire the DOI into the paper
 
-Once you have the DOI, do the following (or ask me to):
-
-1. Add to `paper/references.bib`:
-   ```bibtex
-   @misc{goldstein2026crv,
-     title        = {Challenge Run Value (cRV): analysis code and synthetic validation corpus},
-     author       = {Goldstein, Jacob},
-     year         = {2026},
-     howpublished = {Zenodo},
-     doi          = {10.5281/zenodo.XXXXXXX}
-   }
-   ```
-2. Cite it in `paper/body.tex` (Reproducing the results / Data availability),
-   e.g. `\citep{goldstein2026crv}`.
-3. Replace the blind wording "released on acceptance" in the Data availability
-   section with the DOI.
-4. Rebuild (`cd paper && make paper paper-review paper-dgruyter`) and commit.
+**DONE.** The record is published and mints the DOI
+**`10.5281/zenodo.21924168`** (resolves to
+<https://zenodo.org/records/21924168>). The `@misc{goldstein2026crv}` entry is
+in `paper/references.bib` and the `paper/declarations.md` data-availability
+statement carries the DOI.
 
 > **Blind-review note:** keep the manuscript's Data availability wording as
 > "released on acceptance" *until* the manuscript is accepted; only the
-> camera-ready / declarations template carries the real DOI.
+> camera-ready / declarations template carries the real DOI. When the
+> manuscript is accepted, cite `\citep{goldstein2026crv}` in the
+> "Reproducing the results" section of `paper/body.tex` and rebuild.

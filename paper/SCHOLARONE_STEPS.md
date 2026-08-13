@@ -20,7 +20,7 @@ in.
 | Ethical/legal declarations | ✅ `paper/declarations.md` |
 | Figures (EPS + 600-dpi TIF) | ✅ `outputs/figures/submission/Figure{1..5}.{eps,tif}` |
 | Tables (editable LaTeX) | ✅ `outputs/tables/*.tex` (11 tables) |
-| Zenodo DOI | ⛔ **you** — publish the deposit, paste the DOI back |
+| Zenodo DOI | ✅ `10.5281/zenodo.21924168` |
 | 4 suggested reviewers | ⛔ **you** — see §6 |
 | AI/LLM-use disclosure wording | ⛔ **you** — approve the draft in `declarations.md` |
 | Cover-letter date | ⛔ **you** — set on the day you submit |
@@ -108,7 +108,7 @@ Confirm/attach these (full text drafted in `paper/declarations.md`):
 - **Conflict of interest:** none
 - **Funding:** none
 - **Data availability:** public Statcast data; code + synthetic corpus
-  deposited on Zenodo (paste DOI once minted — see `deposit/ZENODO_STEPS.md`)
+  deposited on Zenodo at `10.5281/zenodo.21924168`
 - **Human/animal subjects:** not applicable
 - **AI/LLM use:** approve the wording in `declarations.md` before upload
   (required by JQAS; no AI tool listed as author)
@@ -120,8 +120,8 @@ Confirm/attach these (full text drafted in `paper/declarations.md`):
 - [ ] Cover-letter date set.
 - [ ] Title page has the 4 suggested reviewers (or "none suggested").
 - [ ] AI-disclosure wording approved (your own words).
-- [ ] Zenodo DOI added to the data-availability statement and
-      `paper/references.bib` (paste it back to me and I'll wire + rebuild).
+- [x] Zenodo DOI added to the data-availability statement and
+      `paper/references.bib` (`10.5281/zenodo.21924168`).
 - [ ] `main.pdf` verified de-identified (no name/affiliation/ORCID/repo).
 - [ ] 11 tables and 5 figures (EPS + TIF) all attached.
 
