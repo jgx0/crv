@@ -27,7 +27,7 @@ Challenge Run Value in MLB's ABS challenge era
 
 - Word count (main text): approximately 4,900 words (excluding abstract,
   references, tables, and figure legends)
-- Abstract word count: 223 (single paragraph, limit 250)
+- Abstract word count: 154 (single paragraph, limit 250)
 - Number of tables: **11**
 - Number of figures: **5**
 - Supplementary material: **No**

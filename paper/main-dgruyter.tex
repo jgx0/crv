@@ -81,27 +81,20 @@ challenge era}
 Millburn High School, Millburn, NJ 07041, United States, e-mail: 27goldsteinj@millburn.org, ORCID: 0009-0004-2659-1256}
 
 \abstract{We introduce Challenge Run Value ($cRV$), a pitch-level metric for
-valuing Automated Ball-Strike (ABS) challenges in Major League Baseball. The
-model combines run-expectancy deltas from count- and plate-appearance-ending
-state changes with a time-decaying, scarcity-weighted opportunity-cost penalty for failed
-challenges. Unlike framing metrics, which measure physical receiving skill
-under human umpiring, $cRV$ treats the challenge as a scarce strategic
-resource whose value depends on timing, conversion, and forgone future
-options. We implement a reproducible five-module pipeline (ingestion, event
-isolation, alternate-state generation, RE288 mapping, and scoring) with
-bootstrap uncertainty, leverage stratification, and sensitivity analysis. A
-central methodological contribution is the valuation of terminal outcomes:
-challenges converting a called strike three into ball four, or the reverse,
-end the plate appearance and must be valued from post-event base/out states
-and runs scored, not zeroed placeholders. Applying the pipeline to the
-$1{,}971$ plate-appearance-ending challenges recoverable from the 2026 regular
-season through August 12, we estimate a mean $cRV$ of $0.159$ runs per
-challenge (game-clustered bootstrap $95\%$ CI $[0.147,\,0.172]$), with
-catchers generating roughly two-and-a-half times the per-challenge value of batters
-($0.231$ versus $0.088$ runs) in this terminal-challenge sample. The highest-value events are terminal
-conversions (bases-loaded walk overturns and inning-ending strikeout
-overturns worth over $1.7$ runs each), and zeroing such states, as a naive
-implementation would, drives the aggregate negative ($-0.016$), inverting the
+valuing Automated Ball-Strike (ABS) challenges in Major League Baseball.
+Unlike framing metrics, which measure receiving skill under human umpiring,
+$cRV$ treats the challenge as a scarce strategic resource: it combines
+run-expectancy deltas from count- and plate-appearance-ending state changes
+with a time-decaying, scarcity-weighted penalty for failed challenges. A
+central contribution is the valuation of terminal outcomes, such as
+challenges converting a called strike three into ball four (or the reverse),
+which must be priced from post-event base/out states and runs scored rather
+than zeroed. Applying the model to the $1{,}971$ plate-appearance-ending
+challenges recoverable from the 2026 regular season through August 12, we
+estimate a mean $cRV$ of $0.159$ runs per challenge (bootstrap $95\%$ CI
+$[0.147,\,0.172]$); catchers generate roughly two-and-a-half times the
+per-challenge value of batters ($0.231$ versus $0.088$). Zeroing terminal
+states would instead drive the aggregate negative ($-0.016$), inverting the
 sign of the result.}
 
 \keywords{run expectancy; opportunity cost; catcher framing; sabermetrics;
