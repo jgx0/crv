@@ -36,8 +36,8 @@ Copy-paste these fields exactly:
 > Run Value (cRV): quantifying strategic value in MLB's ABS challenge era"
 > (Journal of Quantitative Analysis in Sports). cRV is a run-denominated
 > metric for valuing Automated Ball-Strike (ABS) challenges in Major League
-> Baseball, combining RE288 run-expectancy deltas with a time-decaying
-> opportunity-cost penalty for failed challenges.
+> Baseball, combining RE288 run-expectancy deltas with a time-decaying,
+> scarcity-weighted opportunity-cost penalty for failed challenges.
 >
 > The deposit contains the five-module Python pipeline (ingestion, event
 > isolation, alternate-state generation, RE288 mapping, scoring) plus
