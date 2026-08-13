@@ -19,15 +19,24 @@
 - [x] Add reproducible manuscript build tooling (LaTeX compile target).
 - [x] Expand related-work citations with framing/decision-context references.
 
+## Done (2026 real-data analysis)
+- [x] Replace synthetic fallback with full 2026 Statcast challenge extraction
+      (1,914 real events; events.py parses the "challenged (pitch result)"
+      grammar).
+- [x] Report per-cell RE288 sample sizes (`re288_sample_summary.csv`): 288 cells,
+      median 574, 29 cells < 100 pitches.
+- [x] Estimate EV_c empirically as P(need) x P(win) x mean late-game ΔRV
+      (`ev_c_estimate.csv`): 0.204 x 0.460 x 0.357 = 0.033 runs, cluster-
+      bootstrap CI [0.029, 0.038].
+- [x] Add a win-probability (WPA) overlay on successful overturns
+      (`challenge_wpa_summary.csv`): catchers +14.5 vs batters +5.5 win prob.
+
 ## Remaining empirical work
-- [ ] Replace synthetic fallback with full 2026 Statcast challenge extraction
-      once API access is stable.
-- [ ] Build multi-season empirical RE288 matrix and report per-cell sample
-      sizes (currently estimated inline from the single pbp pull).
+- [ ] Build multi-season empirical RE288 matrix (single-season only so far).
 - [ ] Validate challenge parsing rules against real ABS game logs and correct
       false positives/negatives.
-- [ ] Estimate EV_c empirically: P(need) x P(win) x mean late-game ΔRV.
+- [ ] Refine the empirical EV_c estimate with an option-value model.
 - [ ] Add year-over-year stability / split-half reliability for player cRV once
       multi-season ABS records are available.
-- [ ] Add win-probability (WPA/leverage-index) overlay on top of run-denominated
-      cRV.
+- [ ] Extend the WPA overlay into a full WPA-denominated model (win-denominated
+      penalty).

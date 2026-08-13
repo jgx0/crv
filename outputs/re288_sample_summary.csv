@@ -1,0 +1,8 @@
+metric,value
+RE288 cells,288.0
+Min pitches per cell,11.0
+Median pitches per cell,585.0
+Mean pitches per cell,1858.1597222222222
+Max pitches per cell,33388.0
+Cells under 100 pitches,28.0
+Cells under 1000 pitches,188.0

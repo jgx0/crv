@@ -8,14 +8,32 @@ from typing import Optional
 import pandas as pd
 
 try:
-    from .analysis import build_ev_sensitivity, build_leverage_summary, build_validation_summary, default_ev_grid
+    from .analysis import (
+        build_challenge_wpa_summary,
+        build_ev_sensitivity,
+        build_leverage_summary,
+        build_re288_sample_summary,
+        build_validation_summary,
+        default_ev_grid,
+        estimate_ev_c_empirical,
+        estimate_ev_c_win,
+    )
     from .calculate import calculate_crv
     from .events import filter_challenge_events
     from .ingestion import fetch_2026_statcast_data
     from .re288 import load_re288_matrix, map_re288
     from .realities import generate_alternate_realities
 except ImportError:  # pragma: no cover - allows running as script from repo root
-    from analysis import build_ev_sensitivity, build_leverage_summary, build_validation_summary, default_ev_grid
+    from analysis import (
+        build_challenge_wpa_summary,
+        build_ev_sensitivity,
+        build_leverage_summary,
+        build_re288_sample_summary,
+        build_validation_summary,
+        default_ev_grid,
+        estimate_ev_c_empirical,
+        estimate_ev_c_win,
+    )
     from calculate import calculate_crv
     from events import filter_challenge_events
     from ingestion import fetch_2026_statcast_data
@@ -192,12 +210,22 @@ _TABLE_HEADERS = {
     "ci_upper": "CI upper",
     "notes": "Notes",
     "parse_quality": "Parse quality",
+    "total_wpa": "Total cWPA",
+    "mean_wpa": "Mean cWPA",
 }
 
 
 def _header_label(col: str) -> str:
     """Journal-style column heading; falls back to the de-underscored name."""
     return _TABLE_HEADERS.get(col, col.replace("_", " ").capitalize())
+
+
+def _metric_value(metric_df: pd.DataFrame, metric: str) -> float:
+    """Extract the ``value`` for a named metric row, defaulting to 0.0."""
+    if metric_df is None or metric_df.empty or "metric" not in metric_df.columns:
+        return 0.0
+    rows = metric_df[metric_df["metric"] == metric]
+    return float(rows.iloc[0]["value"]) if not rows.empty else 0.0
 
 
 def _write_latex_table(df: pd.DataFrame, out_path: Path, caption: str, label: str) -> None:
@@ -232,11 +260,16 @@ def _write_latex_table(df: pd.DataFrame, out_path: Path, caption: str, label: st
                 # Wrap numerics in math mode so negatives get a real minus sign
                 # rather than a text hyphen -- the leaderboard is full of
                 # negative cRV values and "-0.117" sets noticeably wrong.
-                # -0.000 is a rounding artifact of a tiny negative; print it as
-                # 0.000 so the table does not assert a negative that isn't there.
-                s = f"{v:.3f}"
-                if s == "-0.000":
-                    s = "0.000"
+                # Integer-valued floats (counts like 1914.0) print without a
+                # trailing ".000". -0.000 is a rounding artifact of a tiny
+                # negative; print it as 0.000 so the table does not assert a
+                # negative that isn't there.
+                if v.is_integer():
+                    s = str(int(v))
+                else:
+                    s = f"{v:.3f}"
+                    if s == "-0.000":
+                        s = "0.000"
                 vals.append(f"${s}$")
             elif str(v).lower() == "nan":
                 vals.append("unknown")
@@ -334,8 +367,24 @@ def run_experiment(
     leverage_summary = build_leverage_summary(scored)
     leverage_summary.to_csv(output_dir / "leverage_summary.csv", index=False)
 
-    ev_sensitivity = build_ev_sensitivity(scored, ev_values=default_ev_grid())
+    # Estimate EV_c (run- and win-denominated) before the sensitivity sweep, so
+    # the grid can be extended down to include the empirical run value.
+    ev_c_estimate = estimate_ev_c_empirical(scored)
+    ev_c_estimate.to_csv(output_dir / "ev_c_estimate.csv", index=False)
+
+    ev_c_win_estimate = estimate_ev_c_win(scored)
+    ev_c_win_estimate.to_csv(output_dir / "ev_c_win_estimate.csv", index=False)
+
+    empirical_ev_c = _metric_value(ev_c_estimate, "Empirical EV_c")
+
+    ev_sensitivity = build_ev_sensitivity(scored, ev_values=default_ev_grid(empirical_ev_c))
     ev_sensitivity.to_csv(output_dir / "ev_sensitivity.csv", index=False)
+
+    re288_sample_summary = build_re288_sample_summary(re288)
+    re288_sample_summary.to_csv(output_dir / "re288_sample_summary.csv", index=False)
+
+    challenge_wpa_summary = build_challenge_wpa_summary(scored)
+    challenge_wpa_summary.to_csv(output_dir / "challenge_wpa_summary.csv", index=False)
 
     # Parse-quality summary for event isolation validation
     if "parse_quality" in scored.columns:
@@ -388,12 +437,41 @@ def run_experiment(
         caption="Aggregate cRV by challenger role.",
         label="tab:challenger",
     )
+    _write_latex_table(
+        ev_c_estimate,
+        out_path=tables_dir / "ev_c_estimate.tex",
+        caption="Empirical estimate of the retained-challenge value $EV_c$.",
+        label="tab:evc",
+    )
+    _write_latex_table(
+        ev_c_win_estimate,
+        out_path=tables_dir / "ev_c_win_estimate.tex",
+        caption="Empirical estimate of the win-denominated retained-challenge value.",
+        label="tab:evcwin",
+    )
+    _write_latex_table(
+        re288_sample_summary,
+        out_path=tables_dir / "re288_sample_summary.tex",
+        caption="Per-cell sample sizes of the empirical RE288 surface.",
+        label="tab:re288samples",
+    )
+    _write_latex_table(
+        challenge_wpa_summary,
+        out_path=tables_dir / "challenge_wpa_summary.tex",
+        caption="Realized win-probability swing of successful overturns by role.",
+        label="tab:cwpa",
+    )
+
+    empirical_ev_c = _metric_value(ev_c_estimate, "Empirical EV_c")
+    empirical_ev_c_win = _metric_value(ev_c_win_estimate, "Win-denominated EV_c")
 
     return {
         "data_source": data_source,
         "re288_source": re288_source,
         "n_events": len(scored),
         "n_re288_states": len(re288),
+        "empirical_ev_c": empirical_ev_c,
+        "empirical_ev_c_win": empirical_ev_c_win,
         "output_dir": str(output_dir),
     }
 
@@ -421,6 +499,8 @@ def main() -> None:
     print(
         f"CRV run complete | source={meta['data_source']} "
         f"re288={meta['re288_source']} events={meta['n_events']} "
+        f"empirical_ev_c={meta['empirical_ev_c']:.4f} "
+        f"ev_c_win={meta['empirical_ev_c_win']:.5f} "
         f"-> {meta['output_dir']}"
     )
 

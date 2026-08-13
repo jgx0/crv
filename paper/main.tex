@@ -73,7 +73,7 @@
 
 \doublespacing
 
-\title{Challenge Run Value ($cRV$): Quantifying Strategic Value\\in MLB's ABS Challenge Era}
+\title{Challenge Run Value ($cRV$): quantifying strategic value\\in MLB's ABS challenge era}
 
 % De-identified for blind review. Author, affiliation, and repository details
 % are supplied through ScholarOne, not in the manuscript file.
@@ -91,24 +91,21 @@ combines run-expectancy deltas from count- and plate-appearance-ending state
 changes with a time-decaying opportunity-cost penalty for failed challenges.
 Unlike framing metrics, which measure physical receiving skill under human
 umpiring, $cRV$ treats the challenge as a scarce strategic resource whose
-value depends on timing, conversion, and forgone future options.
-
-We implement a reproducible five-module pipeline---ingestion, event isolation,
+value depends on timing, conversion, and forgone future options. We implement
+a reproducible five-module pipeline---ingestion, event isolation,
 alternate-state generation, RE288 mapping, and scoring---with bootstrap
 uncertainty, leverage stratification, and sensitivity analysis. A central
 methodological contribution is the valuation of terminal outcomes: challenges
 converting a called strike three into ball four, or the reverse, end the plate
 appearance and must be valued from post-event base/out states and runs scored,
-not zeroed placeholders.
-
-Applying the pipeline to $1{,}914$ challenge events from the 2026 regular
-season, we estimate a mean $cRV$ of $0.143$ runs per challenge (bootstrap
-$95\%$ CI $[0.130,\,0.158]$), with catchers generating more than three times
-the per-challenge value of batters ($0.222$ versus $0.065$ runs). The
-highest-value events are terminal conversions---bases-loaded walk overturns and
-inning-ending strikeout overturns worth over $1.7$ runs each---and zeroing such
-states, as a naive implementation would, drives the aggregate negative
-($-0.031$), inverting the sign of the result.
+not zeroed placeholders. Applying the pipeline to $1{,}971$ challenge events
+from the 2026 regular season, we estimate a mean $cRV$ of $0.145$ runs per
+challenge (bootstrap $95\%$ CI $[0.131,\,0.158]$), with catchers generating
+more than three times the per-challenge value of batters ($0.223$ versus
+$0.067$ runs). The highest-value events are terminal conversions---bases-loaded
+walk overturns and inning-ending strikeout overturns worth over $1.7$ runs
+each---and zeroing such states, as a naive implementation would, drives the
+aggregate negative ($-0.031$), inverting the sign of the result.
 \end{abstract}
 
 \vspace{1em}
@@ -120,12 +117,12 @@ sabermetrics; decision quality; resource allocation.
 \input{body}
 
 \newpage
-\section*{Data Availability}
-\addcontentsline{toc}{section}{Data Availability}
+\section*{Data availability}
+\addcontentsline{toc}{section}{Data availability}
 The pitch-level inputs are publicly available Statcast data, retrieved through
 the \texttt{pybaseball} interface \citep{pybaseball}. The results reported in
 this manuscript are computed from the full 2026 regular-season challenge corpus
-($n = 1{,}914$) extracted from those feeds. The deterministic synthetic
+($n = 1{,}971$) extracted from those feeds. The deterministic synthetic
 validation corpus described in Section~\ref{sec:validation} is retained as an
 offline correctness harness and is regenerable from the accompanying code. All
 analysis code, including the figure and table generation, will be made publicly
@@ -137,12 +134,12 @@ Omitted for blind review.
 \section*{Funding}
 No external funding supported this work.
 
-\section*{Conflict of Interest}
+\section*{Conflict of interest}
 The author declares no conflict of interest.
 
 \newpage
-\section*{Figure Legends}
-\addcontentsline{toc}{section}{Figure Legends}
+\section*{Figure legends}
+\addcontentsline{toc}{section}{Figure legends}
 
 \noindent\textbf{Figure 1.} Five-module $cRV$ pipeline: ingestion, event
 isolation, alternate-state generation, RE288 mapping, and scoring. Each stage
@@ -168,10 +165,18 @@ two-strike calls into inning-ending outs.
 
 \vspace{1em}
 \noindent\textbf{Figure 4.} Total corpus $cRV$ as a function of the baseline
-retained-challenge value $EV_c$, over the range $[0.05, 0.30]$ runs. The
-relationship is exactly linear because the opportunity-cost penalty applies
-only to failed challenges and scales linearly in $EV_c$; successful challenges
-carry no penalty term. Endpoint values are labeled.
+retained-challenge value $EV_c$, over the range $[0.034, 0.30]$ runs spanning
+the empirical estimate and the fixed baseline. The relationship is exactly
+linear because the opportunity-cost penalty applies only to failed challenges
+and scales linearly in $EV_c$; successful challenges carry no penalty term.
+Endpoint values are labeled.
+
+\vspace{1em}
+\noindent\textbf{Figure 5.} Total challenge win probability (cWPA) by challenger
+role, the win-denominated counterpart of Figure~3. Successful overturns are
+priced by their win-probability swing and failed challenges by a
+win-denominated opportunity-cost penalty. As in runs, catchers accumulate the
+large majority of win-probability value.
 
 \newpage
 \bibliography{references}

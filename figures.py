@@ -275,6 +275,23 @@ def plot_challenger_summary(df: pd.DataFrame, out_stem: Path) -> None:
     _finish(fig, out_stem)
 
 
+def plot_challenge_wpa(df: pd.DataFrame, out_stem: Path) -> None:
+    """Win-denominated challenger-role totals, the WPA twin of the cRV chart."""
+    d = df.copy()
+    d["challenger_type"] = d["challenger_type"].fillna("unknown").astype(str)
+    d = d.sort_values("total_wpa", ascending=False)
+
+    fig, ax = plt.subplots(figsize=(6.2, 0.52 * len(d) + 1.4))
+    _style_axes(ax, xgrid=True)
+    fig.canvas.draw()
+
+    _draw_signed_hbars(ax, list(d["challenger_type"]), [float(v) for v in d["total_wpa"]])
+
+    _set_title(ax, "Cumulative challenge win probability (cWPA) by role")
+    ax.set_xlabel("Total cWPA (win probability)", fontsize=9, color=TEXT_SECONDARY, labelpad=8)
+    _finish(fig, out_stem)
+
+
 def plot_ev_sensitivity(df: pd.DataFrame, out_stem: Path) -> None:
     d = df.copy().sort_values("ev_c")
     x = [float(v) for v in d["ev_c"]]
@@ -419,6 +436,7 @@ FIGURE_ORDER = (
     ("leaderboard_top10", "Figure2"),
     ("challenger_totals", "Figure3"),
     ("ev_sensitivity", "Figure4"),
+    ("challenge_wpa", "Figure5"),
 )
 
 
@@ -462,6 +480,7 @@ def build_all_figures(output_dir: Path) -> list[str]:
         ("player_leaderboard.csv", plot_player_leaderboard, "leaderboard_top10"),
         ("challenger_summary.csv", plot_challenger_summary, "challenger_totals"),
         ("ev_sensitivity.csv", plot_ev_sensitivity, "ev_sensitivity"),
+        ("challenge_wpa_summary.csv", plot_challenge_wpa, "challenge_wpa"),
     )
     for filename, plot_fn, stem in jobs:
         src = output_dir / filename
