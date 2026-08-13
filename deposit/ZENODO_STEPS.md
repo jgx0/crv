@@ -1,4 +1,4 @@
-# Zenodo deposit — step-by-step
+# Zenodo deposit: step-by-step
 
 The upload package is ready at `deposit/crv-code-and-validation-corpus.zip`
 (15 files: pipeline source, tests, README, requirements, the synthetic
@@ -69,7 +69,7 @@ Copy-paste these fields exactly:
 2. Click **Publish**. This is permanent and mints the DOI
    (`10.5281/zenodo.XXXXXXX`). You can add a version later but cannot retract it.
 
-## 6. After publishing — wire the DOI into the paper
+## 6. After publishing: wire the DOI into the paper
 
 **DONE.** The record is published and mints the DOI
 **`10.5281/zenodo.21924168`** (resolves to

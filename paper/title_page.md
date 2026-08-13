@@ -1,4 +1,4 @@
-# Title page (NOT for review — upload with designation "not for review")
+# Title page (NOT for review; upload with designation "not for review")
 
 ## Title
 
@@ -14,8 +14,8 @@ Challenge Run Value in MLB's ABS challenge era
 
 ## Affiliations
 
-- `*` Jacob Goldstein — corresponding author
-  - Department: — (not applicable)
+- `*` Jacob Goldstein, corresponding author
+  - Department: (not applicable)
   - Institution: Millburn High School
   - Street: 462 Millburn Avenue
   - City: Millburn, NJ 07041
@@ -44,6 +44,6 @@ Challenge Run Value in MLB's ABS challenge era
 - This page carries author identity and is supplied separately from the
   anonymized manuscript (`main.tex` / `main-review.pdf`).
 - Suggested reviewers (up to 4, each at a different institution and country):
-  [TODO — to be supplied by the author].
+  [TODO: to be supplied by the author].
 - The corresponding author's institutional e-mail and ORCID are required by
   JQAS; both are filled above.

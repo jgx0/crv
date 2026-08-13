@@ -15,7 +15,7 @@ None declared.
 ## Author contributions
 
 Jacob Goldstein: Conceptualization; Methodology; Software; Validation; Formal
-analysis; Investigation; Data curation; Writing — original draft; Writing —
+analysis; Investigation; Data curation; Writing: original draft; Writing:
 review & editing; Visualization.
 
 ## Data availability statement
@@ -35,7 +35,7 @@ data; it involves no human or animal subjects research.
 
 > **⚠ To be reviewed and finalized by the author before upload.** JQAS
 > requires that any AI/LLM assistance be disclosed, and that no AI tool is
-> listed as an author. A conforming draft is below — edit the wording as you
+> listed as an author. A conforming draft is below; edit the wording as you
 > see fit, but do not delete the disclosure.
 
 Large-language-model and AI-assisted coding tools were used to assist with

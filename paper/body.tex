@@ -38,7 +38,7 @@ against an empirically estimated RE288 surface.
   \item A formal run-denominated metric, $cRV$, combining an RE288 pitch-state
         delta with a time-decaying opportunity-cost penalty
         (Section~\ref{sec:method}).
-  \item Correct treatment of plate-appearance-ending challenges---walk force
+  \item Correct treatment of plate-appearance-ending challenges: walk force
         chains with runs scored, and strikeouts with out increments and
         inning-end zeroing (Section~\ref{sec:terminal}). We show this is not a
         detail: it is where nearly all of the metric's signal lives.
@@ -48,8 +48,8 @@ against an empirically estimated RE288 surface.
         designed validation corpus and unit-test suite that exercises each
         state-transition path (Section~\ref{sec:validation}).
   \item An empirical application to the 2026 regular season through
-        August 12---$1{,}971$ plate-appearance-ending challenges scored against
-        an empirically estimated RE288 matrix---that
+        August 12 ($1{,}971$ plate-appearance-ending challenges scored against
+        an empirically estimated RE288 matrix) that
         quantifies the run value of the challenge as used in practice and shows
         catchers extract roughly two-and-a-half times the per-challenge value
         of batters (Section~\ref{sec:results}).
@@ -58,8 +58,8 @@ against an empirically estimated RE288 surface.
 \section{Related work}
 Count-dependent run expectancy is foundational in sabermetric modeling
 \citep{tango2007}. The classical RE24 matrix conditions expected runs on the 24
-base-out states. The RE288 extension---8 base states $\times$ 3 outs $\times$
-12 counts---conditions additionally on the ball-strike count, which is
+base-out states. The RE288 extension (8 base states $\times$ 3 outs $\times$
+12 counts) conditions additionally on the ball-strike count, which is
 precisely the dimension an ABS challenge manipulates
 \citep{tangotiger2018}. Without the count dimension, a challenge that
 moves a count from 0--1 to 1--0 is invisible; RE288 makes it measurable.
@@ -70,7 +70,7 @@ That literature is the natural predecessor to this work, and also its natural
 contrast: framing measured \emph{how often} borderline pitches were converted
 to strikes through receiving skill, whereas $cRV$ measures \emph{when} a
 challenge should be spent and \emph{whether} spending it paid off. Framing runs
-and $cRV$ are complementary rather than competing---in a full-ABS world the
+and $cRV$ are complementary rather than competing: in a full-ABS world the
 former decays toward zero while the latter becomes the live skill.
 
 The strategic problem of \emph{when} to spend a scarce, retained-on-success
@@ -127,7 +127,7 @@ makes a successful defensive challenge score positive, so that $cRV$ is
 directly comparable across roles.
 
 Failed challenges leave the on-field state unchanged. The pitch delta is
-exactly zero---not merely small---because the umpire's call stands and play
+exactly zero (not merely small) because the umpire's call stands and play
 proceeds from the original reality.
 
 \subsection{Opportunity-cost penalty}
@@ -161,7 +161,7 @@ Penalty_i = -\left(\frac{\max(0,\, 9 - \mathrm{inning}_i)}{9}\right)
 where $C_i$ is the number of challenges the team held immediately before the
 failure. The penalty prices the opportunity cost of the challenge the failure
 destroys: each team enters the game with a two-challenge budget
-\citep{mlbabs2026}---a failure consumes one, a success retains it---so losing
+\citep{mlbabs2026} (a failure consumes one, a success retains it), so losing
 the \emph{last} challenge forfeits the entire retained option value, while
 losing one of two forfeits only a $1/C$ share. In the 2026 corpus, $973$ of
 the $1{,}055$ failed challenges were the team's first failure of the game
@@ -169,7 +169,7 @@ the $1{,}055$ failed challenges were the team's first failure of the game
 
 Four properties of Equation~\ref{eq:penalty} deserve comment. First,
 successful challenges are retained under ABS rules \citep{mlbabs2026}, so $Penalty_i = 0$ on
-wins---the resource was not consumed. Second, the penalty conditions on the
+wins, since the resource was not consumed. Second, the penalty conditions on the
 actual scarce resource: a failure with a reserve challenge still in hand
 ($C_i = 2$) is charged half of one with none in reserve ($C_i = 1$), because
 what is destroyed is the marginal challenge, not the whole stock. Third, the
@@ -182,8 +182,8 @@ $\max(0,\cdot)$ term, consistent with inning-level challenge resets.
 Both the linear decay and the $1/C$ share are modeling choices, not derived
 results: they are the simplest forms with the correct boundary behavior, and
 they avoid free parameters the current data cannot identify. The full
-solution---which the tennis and cricket challenge literature obtains by
-dynamic programming \citep{abramitzky2012,clarkenorman2012,shivakumar2018}---would
+solution (which the tennis and cricket challenge literature obtains by
+dynamic programming \citep{abramitzky2012,clarkenorman2012,shivakumar2018}) would
 price the marginal value of the $k$-th challenge and the option value of
 challenges held. A convex decay, reflecting that late innings are more
 leveraged per inning than early ones, is a plausible refinement.
@@ -202,8 +202,8 @@ wasted challenges.
 The central modeling question is how to value challenges that \emph{end the
 plate appearance}. A called strike on an 0--0 count merely moves the count; a
 called strike on a 3--2 count ends the at-bat. Since challenges are
-disproportionately spent on full counts and two-strike counts---exactly where
-the stakes are highest---getting terminal outcomes right dominates the metric's
+disproportionately spent on full counts and two-strike counts (exactly where
+the stakes are highest), getting terminal outcomes right dominates the metric's
 behavior.
 
 We handle three cases:
@@ -221,7 +221,7 @@ looked up at the same bases, outs$+1$, and a reset $0$--$0$ count. A pure
 strikeout scores no runs, so the immediate-runs term is zero.
 
 \paragraph{Non-terminal count change.} Bases and outs are unchanged; only the
-count state updates in the RE288 lookup. These are the low-magnitude events---an
+count state updates in the RE288 lookup. These are the low-magnitude events: an
 0--1 to 1--0 swing is worth a few hundredths of a run.
 
 Formal transition rules are given in Appendix~\ref{app:transitions}.
@@ -238,7 +238,7 @@ The practical consequence is severe. Under the old treatment, a bases-loaded
 walk conversion scores $\Delta RV = 0$ instead of the $+1.91$ runs it is
 actually worth, and an inning-ending strikeout conversion scores $0$ instead of
 $+1.72$. On the 2026 terminal-challenge corpus (Section~\ref{sec:results}), zeroing terminal
-states drives mean $cRV$ to $-0.016$---the metric reports that challenging is,
+states drives mean $cRV$ to $-0.016$: the metric reports that challenging is,
 on net, \emph{harmful}, because only the penalties survive. With terminal states
 valued correctly, mean $cRV$ is $+0.159$. The sign of the headline result flips
 on this one modeling decision, and it flips on real data, not just a
@@ -275,8 +275,8 @@ The repository implements five core modules plus a validation layer
 Challenge events are identified from free-text descriptions requiring both
 challenge language and an outcome token (``overturned'' / ``upheld'' /
 ``stands''). Role and called-pitch-type are inferred from the same text. When
-inference fails---for example a description reading only ``Challenge overturned
-to a ball'' with no role named---the event is retained but flagged via a
+inference fails (for example, a description reading only ``Challenge overturned
+to a ball'' with no role named), the event is retained but flagged via a
 \texttt{parse\_quality} column rather than silently dropped or silently
 mis-assigned.
 
@@ -301,8 +301,8 @@ actual challenge usage.
 The empirical estimator groups play-by-play pitches by
 (base state, outs, count), computes runs scored from that pitch to the end of
 the half-inning, and averages. It also reports a per-cell
-\texttt{sample\_size}, since rare states---3--0 counts with the bases loaded
-and two outs---are noisy and a multi-season baseline is required for stability.
+\texttt{sample\_size}, since rare states (3--0 counts with the bases loaded
+and two outs) are noisy and a multi-season baseline is required for stability.
 Across the 288 cells the median cell rests on 585 pitches and the mean on
 $1{,}858$, but the distribution is right-skewed: 28 cells (10\%) have fewer
 than 100 pitches and 188 cells (65\%) fewer than $1{,}000$
@@ -348,7 +348,7 @@ pull, against a \emph{designed} corpus that exercises every transition path:
 \end{itemize}
 
 A unit-test suite (\texttt{tests/}) asserts the expected behavior of each path
-independently of the pipeline---walk force chains for all eight base states,
+independently of the pipeline: walk force chains for all eight base states,
 terminal RE zeroing, extra-inning penalty nullification, and parser role
 extraction. All tests pass on the current implementation. This harness makes the
 empirical results of Section~\ref{sec:results} regression-safe: the transition
@@ -367,7 +367,7 @@ from the same season's play-by-play ($EV_c = 0.15$). All artifacts live in
 \input{../outputs/tables/validation_summary.tex}
 
 Mean $cRV$ is $0.159$ runs per challenge, with a game-clustered bootstrap
-$95\%$ CI of $[0.147,\,0.172]$---comfortably above zero, so the challenge as
+$95\%$ CI of $[0.147,\,0.172]$, comfortably above zero, so the challenge as
 actually used in 2026 added run value on net within this terminal-challenge
 census. A positive mean is the expected-value answer for the challenge system,
 not a scoring artifact: a successful overturn realizes a positive run swing,
@@ -388,7 +388,7 @@ one the framework predicts: value is concentrated in terminal-state conversions,
 while failures contribute a thin band of small negative values whose magnitude
 is set entirely by inning. The role split is the headline empirical finding.
 Batters and catchers issue challenges in almost equal numbers ($985$ versus
-$984$), but catchers accumulate $227.6$ runs of $cRV$ to the batters' $86.7$---a
+$984$), but catchers accumulate $227.6$ runs of $cRV$ to the batters' $86.7$, a
 per-challenge mean of $0.231$ against $0.088$. This comparison is
 descriptive, not causal: catchers and batters issue challenges in structurally
 different spots (converting two-strike takes into outs versus avoiding called
@@ -407,7 +407,7 @@ whether it is stable enough to be a skill rather than noise
 (Table~\ref{tab:info}). First, across the $47$ players with at least $10$
 challenges, mean $cRV$ correlates $0.72$ (Pearson) and $0.68$ (Spearman) with
 challenge success rate. Accuracy explains roughly half the variance, but the
-remaining half is leverage and timing---the information the run-denominated
+remaining half is leverage and timing, the information the run-denominated
 metric adds over a success-rate ranking. Second, split-half reliability within
 2026 is weaker: for the $45$ players with at least four challenges in each half
 of the season, mean $cRV$ in the first half correlates $0.34$ (Pearson) with
@@ -447,16 +447,16 @@ Campusano challenges and wins, converting the walk into strike three.
 \end{itemize}
 Catcher delta: $1.721 - 0 = 1.721$ runs. This is exactly the case the old
 zero-everything treatment got most wrong: it scored the inning-ending
-conversion---erasing a run already in and ending the threat---at zero.
+conversion (erasing a run already in and ending the threat) at zero.
 
 \paragraph{Early failed challenge (Carter Jensen, catcher, $-0.07$).}
-A first-inning failed catcher challenge---the team's first failure, so two
-challenges were still held---yields $\Delta RV = 0$ and
+A first-inning failed catcher challenge (the team's first failure, so two
+challenges were still held) yields $\Delta RV = 0$ and
 $Penalty = -(8/9) \times 0.15 \times (1/2) \approx -0.067$. Had it been the
 team's last challenge the charge would double to $-0.133$, and any ninth-inning
 failure yields exactly $0.00$ because no innings of option value remain. Same
 outcome and accuracy, but the price depends on both how much game remains and
-how much of the challenge budget survives---the resource-management incentive
+how much of the challenge budget survives, the resource-management incentive
 the framework exists to encode.
 
 \subsection{Leverage stratification}
@@ -465,10 +465,10 @@ the framework exists to encode.
 Total value tracks event count: the late bucket (innings 7--9) carries the most
 challenges ($735$, $105.6$ runs), followed by mid ($631$ events, $108.0$) and
 early ($578$ events, $97.0$), with a small extra-inning tail ($27$ events,
-$3.8$). The \emph{mean} is mildly higher early and mid-game than late---$0.168$,
+$3.8$). The \emph{mean} is mildly higher early and mid-game than late: $0.168$,
 $0.171$, $0.144$, and $0.139$ runs respectively. Two forces pull against each
 other: the inning decay makes an early failure costlier, but the scarcity
-weight makes a team's \emph{first} failure---disproportionately early---only
+weight makes a team's \emph{first} failure (disproportionately early) only
 half as costly as its last. Terminal conversions dominate the numerator in
 every inning, so per-challenge value stays within a narrow band while total
 value accumulates wherever challenges are most frequent.
@@ -488,8 +488,8 @@ $\sum_i cRV_i = \sum_i \Delta RV_i - EV_c \sum_{i \in \text{fail}}
 
 Two conclusions follow. First, because $cRV$ is monotone nonincreasing in
 $EV_c$ (only the penalty depends on it), the positive sign of mean $cRV$ holds
-across the entire grid---at the data-driven value $0.034$ as well as the fixed
-baseline---so the conclusion that challenging adds value is not an artifact of
+across the entire grid (at the data-driven value $0.034$ as well as the fixed
+baseline), so the conclusion that challenging adds value is not an artifact of
 the $EV_c$ choice. Second, the \emph{ranking} of successful
 high-leverage events is completely invariant to $EV_c$, since successes carry
 no penalty term at all. $EV_c$ affects only how harshly failures are judged
@@ -523,17 +523,17 @@ catcher dominance found in runs, for a corpus total of $+20.2$ win probability
 \subsection{Managerial implications}
 Under this framework, challenging a borderline strike on an 0--0 count is
 rarely justified. The count move (0--1 $\to$ 1--0) is worth roughly $0.07$
-runs in our surface, while a first-inning miss costs $-(8/9) \times 0.15 / C$---
+runs in our surface, while a first-inning miss costs $-(8/9) \times 0.15 / C$,
 about $-0.07$ runs if it is the team's first failure ($C = 2$) and $-0.13$ if
 it is the last ($C = 1$) under the baseline $EV_c$. Break-even therefore
 requires a win probability of roughly $49\%$ to $65\%$, depending on how much
-of the challenge budget remains---higher than typical challenge success rates.
+of the challenge budget remains, which is higher than typical challenge success rates.
 Under the empirical $EV_c = 0.034$ those first-inning penalties shrink to
 $-0.015$ and $-0.03$ runs, and break-even falls to about $18\%$--$30\%$, so
 the strength of this recommendation turns on which $EV_c$ one trusts.
 
-By contrast, full-count terminal challenges---especially with runners on and
-two outs---can swing between half a run and a run and a half of expectancy.
+By contrast, full-count terminal challenges (especially with runners on and
+two outs) can swing between half a run and a run and a half of expectancy.
 At those magnitudes, break-even win probability falls into the low single
 digits of percent. Players should be instructed to spend challenges almost
 freely on plate-appearance-ending calls with runners in scoring position, and
@@ -554,7 +554,7 @@ box score.
 $cRV$ as currently specified prices neither effect. It values challenges
 actually thrown, not the option value of challenges held. A complete
 game-theoretic treatment would model the equilibrium zone expansion as a
-function of remaining challenges on both sides---a substantially harder problem
+function of remaining challenges on both sides, a substantially harder problem
 requiring pitch-location data and a behavioral model of umpire and pitcher
 response.
 
@@ -577,7 +577,7 @@ to avoid double-counting pitches that were framed \emph{and} challenged.
         ($1{,}413$ strikeout calls, $558$ walk calls). Count-changing
         challenges that leave the plate appearance live are not represented.
         The results are therefore a census of \emph{terminal} challenges rather
-        than a sample of all challenges---which captures the highest-leverage
+        than a sample of all challenges, which captures the highest-leverage
         events but omits the low-value count-changing tail, so the reported
         mean is upward-biased relative to the mean over all challenges.
   \item \textbf{RE288 surface.} The matrix is estimated empirically from 2026
@@ -596,9 +596,9 @@ to avoid double-counting pitches that were framed \emph{and} challenged.
         it is a first-order approximation, not the full dynamic program solved
         in the tennis and cricket challenge literature
         \citep{abramitzky2012,clarkenorman2012,shivakumar2018}. A positive mean
-        $cRV$ is nonetheless the expected-value answer---a successful overturn
+        $cRV$ is nonetheless the expected-value answer (a successful overturn
         realizes a positive run swing while a failure is charged the
-        opportunity cost of the challenge it destroyed---rather than an
+        opportunity cost of the challenge it destroyed), rather than an
         artifact of an asymmetric scoring rule.
   \item \textbf{Fixed $EV_c$.} The baseline challenge value is fixed at
         $0.15$ runs for the headline results. The empirical estimate ($0.034$
@@ -656,8 +656,8 @@ Immediate priorities, roughly in dependency order:
 
 \section{Conclusion}
 $cRV$ provides a practical, run-based framework for measuring challenge
-strategy in the ABS era. By pairing RE288 state deltas---including correct walk
-and strikeout transitions---with a transparent opportunity-cost penalty, the
+strategy in the ABS era. By pairing RE288 state deltas (including correct walk
+and strikeout transitions) with a transparent opportunity-cost penalty, the
 metric distinguishes high-leverage conversion skill from reckless early usage,
 a distinction invisible to raw success rates.
 
@@ -742,7 +742,7 @@ Pre-walk $\beta$ & Description & Post-walk $\beta'$ & Runs $\rho$ \\
 Note the unforced cases: with a runner on second only ($010$), the batter takes
 first and the runner \emph{holds}, giving $110$. With runners on second and
 third ($011$), both hold and the batter takes first, giving $111$ with no run
-scored---the runner on third is not forced.
+scored; the runner on third is not forced.
 
 \subsection{Overturn mapping}
 An overturned called strike is evaluated as a called ball, and an overturned

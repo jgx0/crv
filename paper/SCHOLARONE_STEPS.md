@@ -1,4 +1,4 @@
-# ScholarOne submission — step-by-step (JQAS)
+# ScholarOne submission: step-by-step (JQAS)
 
 Submit at **<https://mc.manuscriptcentral.com/dgjqas>**.
 
@@ -21,9 +21,9 @@ in.
 | Figures (EPS + 600-dpi TIF) | ✅ `outputs/figures/submission/Figure{1..5}.{eps,tif}` |
 | Tables (editable LaTeX) | ✅ `outputs/tables/*.tex` (11 tables) |
 | Zenodo DOI | ✅ `10.5281/zenodo.21924168` |
-| 4 suggested reviewers | ⛔ **you** — see §6 |
-| AI/LLM-use disclosure wording | ⛔ **you** — approve the draft in `declarations.md` |
-| Cover-letter date | ⛔ **you** — set on the day you submit |
+| 4 suggested reviewers | ⛔ **you**: see §6 |
+| AI/LLM-use disclosure wording | ⛔ **you**: approve the draft in `declarations.md` |
+| Cover-letter date | ⛔ **you**: set on the day you submit |
 
 ---
 
@@ -80,7 +80,7 @@ Upload files with these **designations**:
 | **Main document** (anonymous) | `paper/main.pdf` |
 | **Title page** → *"not for review"* | `paper/title_page.md` → export to PDF, or paste its content |
 | **Cover letter** | `paper/cover_letter.md` (set the date first) |
-| **Figures** — one upload per figure | `outputs/figures/submission/Figure{1..5}.eps` **and** `...tif` (600-dpi) |
+| **Figures**: one upload per figure | `outputs/figures/submission/Figure{1..5}.eps` **and** `...tif` (600-dpi) |
 | **Tables** | `outputs/tables/*.tex` (11 editable LaTeX tables) |
 | **Ethical/legal declarations** | `paper/declarations.md` (after you finalize the AI wording) |
 | **Supplementary material** | none (declared "No") |
@@ -96,7 +96,7 @@ author block) or `paper/main-dgruyter.tex`.
 
 ScholarOne will ask for **4 reviewers**, each at a **different institution and
 country** from you. For each, supply: name, institution, country, and e-mail.
-I cannot invent these — pick real, active sabermetrics / sports-analytics
+I cannot invent these; pick real, active sabermetrics / sports-analytics
 researchers (no co-authors, no conflicts).
 
 ---

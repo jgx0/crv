@@ -1,6 +1,6 @@
 # Cover letter
 
-**[Date — set on submission]**
+**[Date: set on submission]**
 
 To the Editor-in-Chief,
 *Journal of Quantitative Analysis in Sports*
@@ -16,7 +16,7 @@ consideration as a Research Article in the *Journal of Quantitative Analysis
 in Sports*.
 
 The manuscript's central contribution is a run-denominated framework for
-valuing Major League Baseball's new Automated Ball-Strike (ABS) challenge — a
+valuing Major League Baseball's new Automated Ball-Strike (ABS) challenge, a
 scarce strategic resource introduced league-wide in 2026 that no existing
 public metric measures. Two results, in particular, motivate publication in
 JQAS:
@@ -25,8 +25,8 @@ JQAS:
    edge case.** Because Statcast records a challenge's outcome on the pitch
    that ends the plate appearance, the recoverable challenges are exactly the
    plate-appearance-ending ones. We show that correctly valuing these
-   terminal transitions (walk force chains and strikeout out-increments) —
-   rather than zeroing them — flips the sign of the headline result: mean
+   terminal transitions (walk force chains and strikeout out-increments),
+   rather than zeroing them, flips the sign of the headline result: mean
    $cRV$ is $+0.159$ runs per challenge, but zeroing terminal states drives
    it to $-0.016$. Any future challenge-valuation metric inherits this
    sensitivity.
