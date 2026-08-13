@@ -1,10 +1,10 @@
-# Title page (NOT for review; upload with designation "not for review")
+# Title page 
 
 ## Title
 
 Challenge Run Value ($cRV$): quantifying strategic value in MLB's ABS challenge era
 
-## Short / running title (≤ 75 characters incl. spaces)
+## Running title
 
 Challenge Run Value in MLB's ABS challenge era
 
@@ -32,18 +32,3 @@ Challenge Run Value in MLB's ABS challenge era
 - Number of figures: **5**
 - Supplementary material: **No**
 
-## Classification (entered in the ScholarOne wizard)
-
-- JEL codes: Z22 (Sports), Z20 (Sports Economics: General), C10 (Econometric
-  and Statistical Methods and Methodology: General)
-- MSC codes: 62-07 (Data analysis), 62P99 (Applications of statistics),
-  91A80 (Applications of game theory)
-
-## Notes
-
-- This page carries author identity and is supplied separately from the
-  anonymized manuscript (`main.tex` / `main-review.pdf`).
-- Suggested reviewers (up to 4, each at a different institution and country):
-  [TODO: to be supplied by the author].
-- The corresponding author's institutional e-mail and ORCID are required by
-  JQAS; both are filled above.
