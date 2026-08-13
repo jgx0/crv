@@ -12,12 +12,13 @@ in.
 
 | Item | State |
 |---|---|
-| Anonymized manuscript (PDF) | ✅ `paper/main.pdf` (30 pp, de-identified) |
-| Review copy with inlined figures | ✅ `paper/main-review.pdf` (32 pp) |
+| Anonymized manuscript (PDF) | ✅ `paper/main.pdf` (29 pp, de-identified) |
+| Review copy with inlined figures | ✅ `paper/main-review.pdf` (31 pp) |
 | LaTeX source (main + body + bib) | ✅ `paper/*.tex`, `paper/references.bib` |
 | Title page ("not for review") | ✅ `paper/title_page.md` |
 | Cover letter | ✅ `paper/cover_letter.md` |
-| Ethical/legal declarations | ✅ `paper/declarations.md` |
+| Ethical/legal declarations (Word) | ✅ `paper/JQAS_Ethical_and_Legal_Declarations_filled.docx` |
+| Alt Text Submission Form (Word) | ✅ `paper/Alt-text_Submission_Form_filled.docx` |
 | Figures (EPS + 600-dpi TIF) | ✅ `outputs/figures/submission/Figure{1..5}.{eps,tif}` |
 | Tables (editable LaTeX) | ✅ `outputs/tables/*.tex` (11 tables) |
 | Zenodo DOI | ✅ `10.5281/zenodo.21924168` |
@@ -45,7 +46,7 @@ in.
 4. **Running/short title (≤75 chars):** `Challenge Run Value in MLB's ABS
    challenge era`.
 5. **Abstract:** paste the single-paragraph abstract from `paper/main.tex`
-   (223 words, within the 250 limit).
+   (154 words, within the 250 limit).
 
 ---
 
@@ -82,8 +83,14 @@ Upload files with these **designations**:
 | **Cover letter** | `paper/cover_letter.md` (set the date first) |
 | **Figures**: one upload per figure | `outputs/figures/submission/Figure{1..5}.eps` **and** `...tif` (600-dpi) |
 | **Tables** | `outputs/tables/*.tex` (11 editable LaTeX tables) |
-| **Ethical/legal declarations** | `paper/declarations.md` (after you finalize the AI wording) |
+| **Alt Text Submission Form** | `paper/Alt-text_Submission_Form_filled.docx` |
+| **Ethical/legal declarations** | `paper/JQAS_Ethical_and_Legal_Declarations_filled.docx` (Word; finalize the AI wording first) |
 | **Supplementary material** | none (declared "No") |
+
+Upload mechanics: files go up in batches of five; the wizard combines them
+into one review PDF. Designate every `.tex`/`.bib` source file as a
+**TeX/LaTeX Suppl File**, the Word declarations as the declarations template,
+and the alt-text form as **Alt Text Submission Form**.
 
 **Blind-review hygiene:** `main.pdf` contains no author name, affiliation,
 ORCID, e-mail, or repo URL. The title page carries all identity and is marked
@@ -103,7 +110,8 @@ researchers (no co-authors, no conflicts).
 
 ## 7. Declarations to confirm in the wizard
 
-Confirm/attach these (full text drafted in `paper/declarations.md`):
+Confirm/attach these (filled into
+`paper/JQAS_Ethical_and_Legal_Declarations_filled.docx`):
 
 - **Conflict of interest:** none
 - **Funding:** none
@@ -124,6 +132,8 @@ Confirm/attach these (full text drafted in `paper/declarations.md`):
       `paper/references.bib` (`10.5281/zenodo.21924168`).
 - [ ] `main.pdf` verified de-identified (no name/affiliation/ORCID/repo).
 - [ ] 11 tables and 5 figures (EPS + TIF) all attached.
+- [ ] Alt Text Submission Form uploaded (`paper/Alt-text_Submission_Form_filled.docx`).
+- [ ] Ethical/legal declarations Word file uploaded (`paper/JQAS_Ethical_and_Legal_Declarations_filled.docx`).
 
 ---
 
