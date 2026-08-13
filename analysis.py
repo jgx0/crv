@@ -35,6 +35,44 @@ def _bootstrap_mean_ci(
     return lower, upper
 
 
+def _cluster_bootstrap_mean_ci(
+    df: pd.DataFrame,
+    value_col: str = "cRV",
+    n_boot: int = 1000,
+    alpha: float = 0.05,
+    seed: int = BOOTSTRAP_SEED,
+) -> tuple[float, float]:
+    """Game-level cluster bootstrap CI for a mean.
+
+    Challenges within a game are not independent (a team that challenges
+    repeatedly in one game contributes correlated events), so resampling
+    events i.i.d. understates uncertainty. Resampling whole games preserves the
+    within-game structure. Falls back to the event-level bootstrap when no
+    game identifier is present.
+    """
+    if df is None or df.empty or "game_pk" not in df.columns:
+        return _bootstrap_mean_ci(df[value_col] if df is not None else pd.Series(dtype=float), n_boot=n_boot, alpha=alpha, seed=seed)
+
+    sub = df[[value_col, "game_pk"]].copy()
+    sub[value_col] = pd.to_numeric(sub[value_col], errors="coerce")
+    sub = sub.dropna(subset=[value_col])
+    if sub.empty:
+        return 0.0, 0.0
+
+    groups = [np.asarray(v, dtype=float) for v in sub.groupby("game_pk")[value_col].apply(list)]
+    if len(groups) == 1:
+        value = float(np.concatenate(groups).mean())
+        return value, value
+
+    rng = np.random.default_rng(seed)
+    draws = np.empty(n_boot, dtype=float)
+    gidx = np.arange(len(groups))
+    for i in range(n_boot):
+        picks = rng.choice(gidx, size=len(gidx), replace=True)
+        draws[i] = np.concatenate([groups[p] for p in picks]).mean()
+    return float(np.quantile(draws, alpha / 2)), float(np.quantile(draws, 1 - alpha / 2))
+
+
 def build_validation_summary(scored_df: pd.DataFrame, n_boot: int = 1000) -> pd.DataFrame:
     """Compute basic validation metrics and uncertainty summaries."""
     if scored_df is None or scored_df.empty:
@@ -53,13 +91,13 @@ def build_validation_summary(scored_df: pd.DataFrame, n_boot: int = 1000) -> pd.
     total_events = float(len(scored_df))
     success_rate = float(pd.to_numeric(scored_df["challenge_success"], errors="coerce").fillna(0).mean())
     mean_crv = float(pd.to_numeric(scored_df["cRV"], errors="coerce").fillna(0.0).mean())
-    ci_low, ci_high = _bootstrap_mean_ci(scored_df["cRV"], n_boot=n_boot)
+    ci_low, ci_high = _cluster_bootstrap_mean_ci(scored_df, value_col="cRV", n_boot=n_boot)
 
     return pd.DataFrame(
         [
             {"metric": "Total events", "value": total_events, "ci_lower": total_events, "ci_upper": total_events, "notes": "Count of challenge events"},
             {"metric": "Success rate", "value": success_rate, "ci_lower": 0.0, "ci_upper": 1.0, "notes": "Share of successful challenges"},
-            {"metric": "Mean cRV", "value": mean_crv, "ci_lower": ci_low, "ci_upper": ci_high, "notes": "Bootstrap CI for mean cRV"},
+            {"metric": "Mean cRV", "value": mean_crv, "ci_lower": ci_low, "ci_upper": ci_high, "notes": "Game-clustered bootstrap CI for mean cRV"},
         ]
     )
 

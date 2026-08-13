@@ -10,6 +10,7 @@ import pandas as pd
 
 from analysis import (
     _bootstrap_mean_ci,
+    _cluster_bootstrap_mean_ci,
     build_challenge_wpa_summary,
     build_re288_sample_summary,
     build_validation_summary,
@@ -68,6 +69,26 @@ def test_validation_summary_reports_prose_ready_metric_labels():
     # carry prose labels rather than raw snake_case identifiers.
     summary = build_validation_summary(_corpus(), n_boot=200)
     assert list(summary["metric"]) == ["Total events", "Success rate", "Mean cRV"]
+
+
+def test_cluster_bootstrap_brackets_mean_and_is_reproducible():
+    # Two games, clustered within-game structure.
+    frame = pd.DataFrame(
+        {
+            "game_pk": [1, 1, 2, 2, 2],
+            "cRV": [0.5, -0.1, 0.2, 0.3, 0.4],
+        }
+    )
+    first = _cluster_bootstrap_mean_ci(frame, n_boot=300)
+    second = _cluster_bootstrap_mean_ci(frame, n_boot=300)
+    assert first == second
+    assert first[0] <= frame["cRV"].mean() <= first[1]
+
+
+def test_cluster_bootstrap_falls_back_without_game_id():
+    frame = pd.DataFrame({"cRV": [0.1, 0.2, 0.3, -0.1]})
+    low, high = _cluster_bootstrap_mean_ci(frame, n_boot=200)
+    assert low <= frame["cRV"].mean() <= high
 
 
 def _ev_c_corpus() -> pd.DataFrame:
