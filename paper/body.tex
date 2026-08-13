@@ -55,7 +55,7 @@ against an empirically estimated RE288 surface.
         of batters (Section~\ref{sec:results}).
 \end{enumerate}
 
-\section{Related work}
+\subsection{Related work}
 Count-dependent run expectancy is foundational in sabermetric modeling
 \citep{tango2007}. The classical RE24 matrix conditions expected runs on the 24
 base-out states. The RE288 extension (8 base states $\times$ 3 outs $\times$
@@ -75,10 +75,9 @@ former decays toward zero while the latter becomes the live skill.
 
 The strategic problem of \emph{when} to spend a scarce, retained-on-success
 review resource has an established economics and operations-research
-literature. Abramitzky et al.\ \citep{abramitzky2012} characterize optimal
-Hawk-Eye line-call challenge behavior in professional tennis; Clarke and
-Norman \citep{clarkenorman2012} solve the challenge decision as a dynamic
-program; and Shivakumar \citep{shivakumar2018} documents strategic review use
+literature. \citet{abramitzky2012} characterize optimal
+Hawk-Eye line-call challenge behavior in professional tennis; \citet{clarkenorman2012} solve the challenge decision as a dynamic
+program; and \citet{shivakumar2018} documents strategic review use
 in cricket's Decision Review System, whose ``retained on success'' rule
 mirrors ABS. Broader work on umpiring-context effects and decision incentives
 in sport \citep{scorecasting} frames the same problem at the behavioral level.
@@ -86,10 +85,12 @@ Our opportunity-cost penalty is a deliberately simple approximation to the
 option value these dynamic-program treatments compute exactly; Section
 \ref{sec:limitations} returns to the gap between the two.
 
-\section{Methodology}
+\section{Materials and Methods}
+
+\subsection{Methodology}
 \label{sec:method}
 
-\subsection{Notation}
+\subsubsection{Notation}
 For challenge event $i$, let the \emph{pre-pitch state} be the triple
 $(c_i, b_i, o_i)$ where $c_i$ is the ball-strike count, $b_i \in \{0,1\}^3$ is
 the base occupancy string (1B, 2B, 3B), and $o_i \in \{0,1,2\}$ is the out
@@ -106,7 +107,7 @@ either a ball or a strike. Two realities follow:
 If the challenge fails, the overturned reality never materializes and the two
 coincide.
 
-\subsection{Pitch-state delta}
+\subsubsection{Pitch-state delta}
 \begin{align}
 \Delta RV_{pitch,i} &=
 \begin{cases}
@@ -130,7 +131,7 @@ Failed challenges leave the on-field state unchanged. The pitch delta is
 exactly zero (not merely small) because the umpire's call stands and play
 proceeds from the original reality.
 
-\subsection{Opportunity-cost penalty}
+\subsubsection{Opportunity-cost penalty}
 Let $EV_c$ be the baseline expected value of \emph{retaining} a challenge. In
 v1 we fix $EV_c = 0.15$ runs as a transparent constant; Section
 \ref{sec:sensitivity} reports sensitivity over $[0.034, 0.30]$. Conceptually,
@@ -188,7 +189,7 @@ price the marginal value of the $k$-th challenge and the option value of
 challenges held. A convex decay, reflecting that late innings are more
 leveraged per inning than early ones, is a plausible refinement.
 
-\subsection{Unified metric}
+\subsubsection{Unified metric}
 \begin{align}
 cRV_i = \Delta RV_{pitch,i} + Penalty_i.
 \end{align}
@@ -197,7 +198,7 @@ Because exactly one of the two terms is nonzero for any given event
 positive values come entirely from conversions, negative values entirely from
 wasted challenges.
 
-\subsection{Terminal outcomes}
+\subsubsection{Terminal outcomes}
 \label{sec:terminal}
 The central modeling question is how to value challenges that \emph{end the
 plate appearance}. A called strike on an 0--0 count merely moves the count; a
@@ -226,7 +227,7 @@ count state updates in the RE288 lookup. These are the low-magnitude events: an
 
 Formal transition rules are given in Appendix~\ref{app:transitions}.
 
-\subsection{Why the terminal treatment matters}
+\subsubsection{Why the terminal treatment matters}
 Earlier drafts of this pipeline assigned $RE = 0$ to \emph{all} terminal
 states, on the reasoning that a completed plate appearance has no
 count-conditioned run expectancy. That is a category error: the plate
@@ -244,7 +245,7 @@ valued correctly, mean $cRV$ is $+0.159$. The sign of the headline result flips
 on this one modeling decision, and it flips on real data, not just a
 constructed example.
 
-\section{Data and pipeline}
+\subsection{Data and pipeline}
 \label{sec:pipeline}
 The repository implements five core modules plus a validation layer
 (Figure~\ref{fig:pipeline}):
@@ -269,9 +270,9 @@ The repository implements five core modules plus a validation layer
         opportunity-cost penalty.
 \end{enumerate}
 
-\crvfigure{fig:pipeline}{pipeline_diagram}{1.0}
+\crvfigure{fig:pipeline}{pipeline_diagram}{1.0}{Five-module $cRV$ pipeline: ingestion, event isolation, alternate-state generation, RE288 mapping, and scoring. Each stage writes an inspectable intermediate file, so any challenge event can be traced from its raw description text through to its final score.}
 
-\subsection{Event isolation and parse quality}
+\subsubsection{Event isolation and parse quality}
 Challenge events are identified from free-text descriptions requiring both
 challenge language and an outcome token (``overturned'' / ``upheld'' /
 ``stands''). Role and called-pitch-type are inferred from the same text. When
@@ -297,7 +298,7 @@ this corpus. This is a selection property of the data source, not of the metric;
 Section~\ref{sec:results} reports on the terminal challenges that dominate
 actual challenge usage.
 
-\subsection{RE288 estimation}
+\subsubsection{RE288 estimation}
 The empirical estimator groups play-by-play pitches by
 (base state, outs, count), computes runs scored from that pitch to the end of
 the half-inning, and averages. It also reports a per-cell
@@ -317,7 +318,7 @@ is outs, and $b, s$ are balls and strikes. This is monotone in the right
 directions and adequate for exercising the pipeline, but it is not a baseball
 estimate and results derived from it are labeled accordingly.
 
-\subsection{Provenance and reproducibility}
+\subsubsection{Provenance and reproducibility}
 All artifacts regenerate with:
 \begin{quote}
 \texttt{python pipeline.py --output-dir outputs}\\
@@ -331,7 +332,7 @@ produced with \texttt{data\crvus{}source = statcast} and
 \texttt{re288\crvus{}source = empirical}: real 2026 challenge events scored
 against an RE288 matrix estimated from the same season's play-by-play.
 
-\section{Validation design}
+\subsection{Validation design}
 \label{sec:validation}
 The state-transition logic is the part of the pipeline most prone to silent
 error, so its correctness is established independently of any particular data
@@ -397,9 +398,9 @@ convert borderline two-strike takes into outs, the single most valuable thing a
 challenge can do; batters more often convert a called third strike into a mere
 continuation of the at-bat.
 
-\crvfigure{fig:leaderboard}{leaderboard_top10}{0.9}
+\crvfigure{fig:leaderboard}{leaderboard_top10}{0.9}{Player-level cumulative $cRV$ for the top challengers of the 2026 regular season. Bars extending right of the zero rule (blue) are positive and arise entirely from successful conversions; bars extending left (red) are negative and arise entirely from opportunity-cost penalties on failed challenges. Bar direction relative to the zero rule encodes the sign independently of color, so the comparison survives grayscale reproduction. The leaderboard is dominated by catchers, the primary users of the challenge.}
 
-\crvfigure{fig:challenger}{challenger_totals}{0.8}
+\crvfigure{fig:challenger}{challenger_totals}{0.8}{Cumulative $cRV$ aggregated by challenger role (batter, catcher, and a small number of events whose role could not be parsed). Batters and catchers issue challenges in nearly equal numbers, but catchers account for the large majority of aggregate value, converting borderline two-strike calls into inning-ending outs.}
 
 \subsection{Information and reliability}
 Two checks bear on whether $cRV$ measures anything beyond raw accuracy, and
@@ -477,7 +478,7 @@ value accumulates wherever challenges are most frequent.
 \label{sec:sensitivity}
 \input{../outputs/tables/ev_sensitivity.tex}
 
-\crvfigure{fig:sensitivity}{ev_sensitivity}{0.85}
+\crvfigure{fig:sensitivity}{ev_sensitivity}{0.85}{Total corpus $cRV$ as a function of the baseline retained-challenge value $EV_c$, over the range $[0.034, 0.30]$ runs spanning the empirical estimate and the fixed baseline. The relationship is exactly linear because the opportunity-cost penalty applies only to failed challenges and scales linearly in $EV_c$; successful challenges carry no penalty term. Endpoint values are labeled.}
 
 Total corpus $cRV$ ranges from $338.9$ runs at the empirical $EV_c = 0.034$ to
 $282.6$ runs at $EV_c = 0.30$ (Figure~\ref{fig:sensitivity}), a spread of
@@ -517,7 +518,7 @@ catcher dominance found in runs, for a corpus total of $+20.2$ win probability
 
 \input{../outputs/tables/challenge_wpa_summary.tex}
 
-\crvfigure{fig:cwpa}{challenge_wpa}{0.8}
+\crvfigure{fig:cwpa}{challenge_wpa}{0.8}{Total challenge win probability (cWPA) by challenger role, the win-denominated counterpart of Figure~3. Successful overturns are priced by their win-probability swing and failed challenges by a win-denominated opportunity-cost penalty. As in runs, catchers accumulate the large majority of win-probability value.}
 
 \section{Discussion}
 \subsection{Managerial implications}
@@ -566,7 +567,7 @@ pitches nobody reviews, $cRV$ governs the ones somebody does. A complete
 catcher valuation in the ABS era plausibly sums the two, though care is needed
 to avoid double-counting pitches that were framed \emph{and} challenged.
 
-\section{Limitations}
+\subsection{Limitations}
 \label{sec:limitations}
 \begin{itemize}
   \item \textbf{Data source and coverage.} The corpus is the full set of
@@ -625,7 +626,7 @@ to avoid double-counting pitches that were framed \emph{and} challenged.
         deterrent effect a holding team exerts on an opponent.
 \end{itemize}
 
-\section{Future work}
+\subsection{Future work}
 \label{sec:future}
 Immediate priorities, roughly in dependency order:
 \begin{enumerate}

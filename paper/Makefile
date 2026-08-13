@@ -6,7 +6,7 @@ REPO_DIR := $(abspath $(PAPER_DIR)/..)
 # Override with `make PYTHON=... ` if you manage environments differently.
 PYTHON ?= $(if $(wildcard $(REPO_DIR)/.venv/bin/python),$(REPO_DIR)/.venv/bin/python,python3)
 
-.PHONY: experiment paper paper-review paper-dgruyter all clean test figures
+.PHONY: experiment experiment-synthetic paper all clean test figures
 
 all: experiment paper
 
@@ -22,39 +22,16 @@ figures:
 test:
 	cd $(REPO_DIR) && $(PYTHON) -m pytest tests/ -q
 
-# $(1) = jobname, $(2) = TeX to prepend before \input (empty for a plain build).
-# bibtex runs on the jobname, so review and submission .bbl files never collide.
-define latex_build
+# The single WSAJ submission manuscript: figures embedded, APA references,
+# continuous line numbers, title page first.
+paper: figures
 	@if command -v pdflatex >/dev/null 2>&1; then \
 		cd $(PAPER_DIR) && \
-		pdflatex -interaction=nonstopmode -jobname=$(1) "$(2)\input{main.tex}" && \
-		bibtex $(1); \
-		cd $(PAPER_DIR) && \
-		pdflatex -interaction=nonstopmode -jobname=$(1) "$(2)\input{main.tex}" && \
-		pdflatex -interaction=nonstopmode -jobname=$(1) "$(2)\input{main.tex}"; \
+		pdflatex -interaction=nonstopmode main.tex && bibtex main && \
+		pdflatex -interaction=nonstopmode main.tex && \
+		pdflatex -interaction=nonstopmode main.tex; \
 	else \
 		echo "pdflatex not found; install a TeX distribution to build paper/main.tex"; \
-	fi
-endef
-
-# Submission copy: figures external, per the JQAS "do not embed" rule.
-paper: figures
-	$(call latex_build,main,)
-
-# Reading copy: same text, figures inlined. Not for submission.
-paper-review: figures
-	$(call latex_build,main-review,\def\REVIEW{1})
-
-# Post-acceptance De Gruyter typeset version. dgruyter.sty ships in the
-# template directory rather than paper/, so TEXINPUTS has to reach it.
-DGRUYTER_DIR := $(REPO_DIR)/JQAS_JQAS_LaTeX-Template-for-Authors
-
-paper-dgruyter: figures
-	@if command -v pdflatex >/dev/null 2>&1; then \
-		cd $(PAPER_DIR) && export TEXINPUTS="$(DGRUYTER_DIR):$$TEXINPUTS" && \
-		pdflatex -interaction=nonstopmode main-dgruyter.tex && bibtex main-dgruyter && pdflatex -interaction=nonstopmode main-dgruyter.tex && pdflatex -interaction=nonstopmode main-dgruyter.tex; \
-	else \
-		echo "pdflatex not found; install a TeX distribution to build paper/main-dgruyter.tex"; \
 	fi
 
 clean:

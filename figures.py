@@ -159,9 +159,9 @@ def _draw_signed_hbars(ax, labels, values, *, bar_px: float = BAR_MAX_PX) -> Non
     ax.axvline(0.0, color=BASELINE, linewidth=1 * PX, zorder=2)
 
 
-# JQAS requires figures as separate EPS/TIF/JPG files. EPS is the vector
-# target (line art, 1200 dpi recommended); TIF is the raster fallback at
-# 600 dpi, comfortably above the 300 dpi halftone floor.
+# Figures are exported as EPS (the vector target for line art, 1200 dpi
+# recommended) and TIF (the raster fallback at 600 dpi, comfortably above the
+# 300 dpi halftone floor).
 SUBMISSION_FORMATS = ("eps", "tif")
 WORKING_FORMATS = ("pdf", "svg")
 TIF_DPI = 600
@@ -179,8 +179,8 @@ LEADERBOARD_TOP_N = int(os.environ.get("CRV_LEADERBOARD_TOP_N", "15"))
 def _set_title(ax, text: str) -> None:
     """Title the axes only when building for local reading, not for journal.
 
-    JQAS wants each figure's descriptive title in the legend on a separate
-    page, so a baked-in title would duplicate it in print.
+    Figure captions carry the descriptive title, so a baked-in title would
+    duplicate it.
     """
     if not EMBED_TITLES:
         return
@@ -428,9 +428,8 @@ def plot_pipeline_diagram(out_stem: Path) -> None:
     _finish(fig, out_stem)
 
 
-# Figure order as cited in the manuscript. JQAS asks that figures be cited in
-# numerical order and uploaded as separate files, so the submission bundle is
-# named by number rather than by content.
+# Figure order as cited in the manuscript. The bundle is named by number
+# rather than by content.
 FIGURE_ORDER = (
     ("pipeline_diagram", "Figure1"),
     ("leaderboard_top10", "Figure2"),

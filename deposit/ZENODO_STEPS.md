@@ -34,7 +34,7 @@ Copy-paste these fields exactly:
 
 > Analysis code and synthetic validation corpus for the manuscript "Challenge
 > Run Value (cRV): quantifying strategic value in MLB's ABS challenge era"
-> (Journal of Quantitative Analysis in Sports). cRV is a run-denominated
+> (Wharton Sports Analytics Journal). cRV is a run-denominated
 > metric for valuing Automated Ball-Strike (ABS) challenges in Major League
 > Baseball, combining RE288 run-expectancy deltas with a time-decaying,
 > scarcity-weighted opportunity-cost penalty for failed challenges.

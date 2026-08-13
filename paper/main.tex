@@ -1,14 +1,11 @@
 % =====================================================================
-%  Double-spaced submission manuscript (de-identified for blind review).
+%  Wharton Sports Analytics Journal -- submission manuscript.
 %
 %  Format: 8.5 x 11 in paper, 1 in margins, single column, 12 pt, double
-%  spaced; Harvard (author-date) references; figures cited in order with
-%  legends collected on their own pages.
+%  spaced; APA references; continuous line numbers; figures embedded with
+%  captions. Title page (title, author, affiliation) is page 1.
 %
-%  Build:
-%    make paper            -> submission copy (figures external)
-%    make paper-review     -> same text with figures inlined, for reading
-%  A typeset preprint version lives in main-dgruyter.tex.
+%  Build:  make paper
 % =====================================================================
 \documentclass[12pt]{article}
 \usepackage[letterpaper,margin=1in]{geometry}
@@ -17,85 +14,79 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage[round,authoryear]{natbib}
+\usepackage{lineno}              % continuous line numbers (required by WSAJ)
+\usepackage{url}                 % URL line-breaking in the reference list
+\usepackage[natbibapa]{apacite}   % APA references (required by WSAJ)
+% apacite's APACtt url style drops the period/slash breakpoints, which lets
+% long URLs overflow the text block; restore url's default breakpoints.
+\AtBeginDocument{\urlstyle{tt}}
 
-% agsm.bst emits \harvardurl{...} for entries with a url field, but that macro
-% is defined by harvard.sty, which cannot coexist with natbib. Defining it in
-% terms of \url gives the same rendering without pulling in that conflict.
-% Note: escape underscores in .bib url fields -- by the time \harvardurl sees
-% its argument the catcodes are fixed, so \url cannot rescue a bare "_".
-\usepackage{url}
-\providecommand{\harvardurl}[1]{\textbf{URL:} \url{#1}}
-
-% Macros shared with main-dgruyter.tex via body.tex.
+% Macros shared with body.tex.
 \input{preamble-shared}
 
-% REVIEW=1 inlines the figures so the paper can be read locally. The
-% submission build leaves them out, per the "do not embed figures" rule.
-\newif\ifreview
-\ifdefined\REVIEW\reviewtrue\else\reviewfalse\fi
-
-\ifreview
-  \usepackage{hyperref}
-\fi
-
-\bibliographystyle{agsm}   % Harvard author-date
-
-% Figure placement markers stand in for the artwork in the submission build.
-% \crvfigure{label}{file}{width}: inlines the graphic in the review build,
-% emits an "[Figure N about here]" marker in the submission build. Either way
-% the figure is numbered and \ref-able, and the legend text lives once, in the
-% Figure Legends section, per the legend-on-separate-pages rule.
-\newcommand{\crvfigure}[3]{%
-  \ifreview
-    \begin{figure}[htbp]
-      \centering
-      \includegraphics[width=#3\textwidth]{../outputs/figures/#2.pdf}
-      \caption{See Figure Legends.}
-      \label{#1}
-    \end{figure}%
-  \else
-    \begin{figure}[htbp]
-      \centering
-      \rule{0.55\textwidth}{0.4pt}\\[6pt]
-      [Figure~\ref{#1} about here]\\[4pt]
-      \rule{0.55\textwidth}{0.4pt}
-      \caption{}
-      \vspace{-2.2em}
-      \label{#1}
-    \end{figure}%
-  \fi}
+% Figures are embedded in the manuscript with their captions.
+\newcommand{\crvfigure}[4]{%
+  \begin{figure}[htbp]
+    \centering
+    \includegraphics[width=#3\textwidth]{../outputs/figures/#2.pdf}
+    \caption{#4}
+    \label{#1}
+  \end{figure}}
 
 \doublespacing
 
-\title{Challenge Run Value ($cRV$): quantifying strategic value\\in MLB's ABS challenge era}
-
-% De-identified for blind review. Author, affiliation, and repository details
-% are omitted from the manuscript file.
-\author{}
-\date{}
-
 \begin{document}
-\maketitle
+
+% ---------------------------------------------------------------------
+% Title page (page 1): title, author, and affiliation.
+% ---------------------------------------------------------------------
+\begin{titlepage}
+  \begin{singlespace}
+  \begin{center}
+    \vspace*{1.5in}
+    {\LARGE\bfseries Challenge Run Value ($cRV$): quantifying strategic value\\[0.5em]
+     in MLB's ABS challenge era\par}
+    \vfill
+    {\Large Jacob Goldstein\par}
+    \vspace{0.75em}
+    {\large Millburn High School, Millburn, NJ 07041, United States\par}
+    \vspace{0.75em}
+    {\normalsize E-mail: 27goldsteinj@millburn.org\par}
+    {\normalsize ORCID: 0009-0004-2659-1256\par}
+    \vspace*{1.5in}
+  \end{center}
+  \end{singlespace}
+\end{titlepage}
+
+\newpage
+\linenumbers
 
 \begin{abstract}
 \noindent
 We introduce Challenge Run Value ($cRV$), a pitch-level metric for valuing
 Automated Ball-Strike (ABS) challenges in Major League Baseball. Unlike
-framing metrics, which measure receiving skill under human umpiring, $cRV$
-treats the challenge as a scarce strategic resource: it combines
-run-expectancy deltas from count- and plate-appearance-ending state changes
-with a time-decaying, scarcity-weighted penalty for failed challenges. A
-central contribution is the valuation of terminal outcomes, such as
-challenges converting a called strike three into ball four (or the reverse),
-which must be priced from post-event base/out states and runs scored rather
-than zeroed. Applying the model to the $1{,}971$ plate-appearance-ending
-challenges recoverable from the 2026 regular season through August 12, we
-estimate a mean $cRV$ of $0.159$ runs per challenge (bootstrap $95\%$ CI
-$[0.147,\,0.172]$); catchers generate roughly two-and-a-half times the
-per-challenge value of batters ($0.231$ versus $0.088$). Zeroing terminal
+framing metrics, which measure physical receiving skill under human umpiring,
+$cRV$ treats the challenge as a scarce strategic resource whose value depends
+on when it is spent, whether it succeeds, and which future options it
+forgoes. The model combines run-expectancy deltas from count- and
+plate-appearance-ending state changes with a time-decaying, scarcity-weighted
+penalty for failed challenges, calibrated against an empirically derived
+RE288 run-expectancy surface built from public Statcast data. A central
+methodological contribution is the valuation of terminal outcomes: challenges
+that convert a called strike three into ball four (or the reverse) end the
+plate appearance and must be priced from the resulting base/out state and
+runs scored rather than zeroed. We implement a reproducible five-module
+pipeline (ingestion, event isolation, alternate-state generation, RE288
+mapping, and scoring) with game-clustered bootstrap uncertainty, leverage
+stratification, and sensitivity analysis. Applying the model to the $1{,}971$
+plate-appearance-ending challenges recoverable from the 2026 regular season
+through August 12, we estimate a mean $cRV$ of $0.159$ runs per challenge
+($95\%$ CI $[0.147,\,0.172]$); catchers generate roughly two-and-a-half times
+the per-challenge value of batters ($0.231$ versus $0.088$). Zeroing terminal
 states would instead drive the aggregate negative ($-0.016$), inverting the
-sign of the result.
+sign of the result. The metric gives teams a principled basis for deciding
+when to spend a scarce challenge and for separating high-leverage conversion
+skill from reckless early usage.
 \end{abstract}
 
 \vspace{1em}
@@ -106,20 +97,18 @@ sabermetrics; decision quality; resource allocation.
 
 \input{body}
 
-\newpage
 \section*{Data availability}
-\addcontentsline{toc}{section}{Data availability}
 The pitch-level inputs are publicly available Statcast data, retrieved through
 the \texttt{pybaseball} interface \citep{pybaseball}. The results reported in
 this manuscript are computed from the 2026 regular-season challenge corpus
-through August 12 ($n = 1{,}971$) extracted from those feeds. The deterministic synthetic
-validation corpus described in Section~\ref{sec:validation} is retained as an
-offline correctness harness and is regenerable from the accompanying code. All
-analysis code, including the figure and table generation, will be made publicly
-available on acceptance.
+through August 12 ($n = 1{,}971$) extracted from those feeds. The deterministic
+synthetic validation corpus described in Section~\ref{sec:validation} is
+retained as an offline correctness harness and is regenerable from the
+accompanying open-source code.
 
-\section*{Acknowledgment}
-Omitted for blind review.
+\section*{Acknowledgments}
+The author is grateful to the developers of \texttt{pybaseball} and to Major
+League Baseball for making Statcast data publicly available.
 
 \section*{Funding}
 No external funding supported this work.
@@ -127,48 +116,7 @@ No external funding supported this work.
 \section*{Conflict of interest}
 The author declares no conflict of interest.
 
-\newpage
-\section*{Figure legends}
-\addcontentsline{toc}{section}{Figure legends}
-
-\noindent\textbf{Figure 1.} Five-module $cRV$ pipeline: ingestion, event
-isolation, alternate-state generation, RE288 mapping, and scoring. Each stage
-writes an inspectable intermediate file, so any challenge event can be traced
-from its raw description text through to its final score.
-
-\vspace{1em}
-\noindent\textbf{Figure 2.} Player-level cumulative $cRV$ for the top
-challengers of the 2026 regular season. Bars extending right of the zero rule
-(blue) are positive and arise entirely from successful conversions; bars
-extending left (red) are negative and arise entirely from opportunity-cost
-penalties on failed challenges. Bar direction relative to the zero rule encodes
-the sign independently of color, so the comparison survives grayscale
-reproduction. The leaderboard is dominated by catchers, the primary users of
-the challenge.
-
-\vspace{1em}
-\noindent\textbf{Figure 3.} Cumulative $cRV$ aggregated by challenger role
-(batter, catcher, and a small number of events whose role could not be parsed).
-Batters and catchers issue challenges in nearly equal numbers, but catchers
-account for the large majority of aggregate value, converting borderline
-two-strike calls into inning-ending outs.
-
-\vspace{1em}
-\noindent\textbf{Figure 4.} Total corpus $cRV$ as a function of the baseline
-retained-challenge value $EV_c$, over the range $[0.034, 0.30]$ runs spanning
-the empirical estimate and the fixed baseline. The relationship is exactly
-linear because the opportunity-cost penalty applies only to failed challenges
-and scales linearly in $EV_c$; successful challenges carry no penalty term.
-Endpoint values are labeled.
-
-\vspace{1em}
-\noindent\textbf{Figure 5.} Total challenge win probability (cWPA) by challenger
-role, the win-denominated counterpart of Figure~3. Successful overturns are
-priced by their win-probability swing and failed challenges by a
-win-denominated opportunity-cost penalty. As in runs, catchers accumulate the
-large majority of win-probability value.
-
-\newpage
+\bibliographystyle{apacite}
 \bibliography{references}
 
 \end{document}

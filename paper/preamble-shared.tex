@@ -1,10 +1,8 @@
-% Macros used by body.tex, which both main.tex (submission) and
-% main-dgruyter.tex (typeset preprint) \input. Anything the shared body
-% depends on belongs here, NOT in a single document's preamble -- otherwise the
-% other document fails with "undefined control sequence".
+% Macros used by body.tex, which main.tex \input. Anything the shared body
+% depends on belongs here, NOT in main.tex's preamble -- otherwise the body
+% fails with "undefined control sequence".
 %
-% \crvfigure is deliberately NOT defined here: each document needs its own
-% version (placement marker vs. embedded graphic), so they define it themselves.
+% \crvfigure is defined in main.tex (embedded graphic with caption).
 
 % Long snake_case identifiers set in \texttt are single unbreakable words and
 % punch through the margin. \crvus prints an underscore and permits a line

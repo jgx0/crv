@@ -195,7 +195,7 @@ def _synthetic_challenge_data() -> pd.DataFrame:
 
 # Prose headers for the LaTeX tables. Emitting the raw snake_case dataframe
 # column names instead sets an unbreakable \_-laden header row that overflows
-# the JQAS text block (the leaderboard ran 58pt over), and reads like a debug
+# the text block (the leaderboard ran 58pt over), and reads like a debug
 # dump rather than a journal table.
 _TABLE_HEADERS = {
     "player_name": "Player",
@@ -246,7 +246,7 @@ def _write_latex_table(df: pd.DataFrame, out_path: Path, caption: str, label: st
         f"\\caption{{{caption}}}",
         f"\\label{{{label}}}",
         # \small buys ~15% width. The widest table (the 6-column leaderboard)
-        # still ran 11pt over the JQAS text block at 12pt body size even with
+        # still ran 11pt over the text block at 12pt body size even with
         # prose headers, and journal tables conventionally set smaller than body.
         "\\small",
         f"\\begin{{tabular}}{{{fmt}}}",
