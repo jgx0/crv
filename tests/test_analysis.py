@@ -12,7 +12,9 @@ from analysis import (
     _bootstrap_mean_ci,
     _cluster_bootstrap_mean_ci,
     build_challenge_wpa_summary,
+    build_crv_success_correlation,
     build_re288_sample_summary,
+    build_split_half_reliability,
     build_validation_summary,
     estimate_ev_c_empirical,
     estimate_ev_c_win,
@@ -179,6 +181,46 @@ def test_challenge_wpa_summary_signs_to_challenger_team():
     by_role = dict(zip(result["challenger_type"], result["total_wpa"]))
     assert abs(by_role["batter"] - (-0.05 - 0.08)) < 1e-9
     assert abs(by_role["catcher"] - 0.02) < 1e-9
+
+
+def test_crv_success_correlation_is_monotone_rank_one():
+    # cRV and success rate are perfectly rank-correlated across players.
+    frame = pd.DataFrame(
+        {
+            "player_name": ["a"] * 10 + ["b"] * 10 + ["c"] * 10,
+            "cRV": [0.5] * 10 + [-0.1] * 10 + [0.2] * 10,
+            "challenge_success": [1] * 10 + [0] * 10 + [1, 0] * 5,
+        }
+    )
+    result = build_crv_success_correlation(frame, min_challenges=5)
+    assert not result.empty
+    rho = float(result[result["metric"] == "Spearman rho (cRV vs success rate)"].iloc[0]["value"])
+    assert abs(rho - 1.0) < 1e-9
+
+
+def test_crv_success_correlation_returns_empty_for_sparse_input():
+    frame = pd.DataFrame(
+        {"player_name": ["a"], "cRV": [0.1], "challenge_success": [1]}
+    )
+    assert build_crv_success_correlation(frame, min_challenges=5).empty
+
+
+def test_split_half_reliability_is_one_for_stable_players():
+    dates = ["2026-04-01"] * 12 + ["2026-08-01"] * 12
+    # Three players, each identical cRV in the first and second halves.
+    frame = pd.DataFrame(
+        {
+            "player_name": ["a"] * 8 + ["b"] * 8 + ["c"] * 8,
+            "game_date": ["2026-04-01"] * 4 + ["2026-08-01"] * 4
+            + ["2026-04-01"] * 4 + ["2026-08-01"] * 4
+            + ["2026-04-01"] * 4 + ["2026-08-01"] * 4,
+            "cRV": [0.5] * 8 + [0.1] * 8 + [-0.1] * 8,
+        }
+    )
+    result = build_split_half_reliability(frame, min_challenges_per_half=4)
+    assert not result.empty
+    r = float(result[result["metric"] == "Pearson r (split-half cRV)"].iloc[0]["value"])
+    assert abs(r - 1.0) < 1e-9
 
 
 def test_ev_c_win_is_product_of_factors():

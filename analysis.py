@@ -133,8 +133,15 @@ def build_ev_sensitivity(base_scored_df: pd.DataFrame, ev_values: Iterable[float
     for ev in ev_values:
         modified = base_scored_df.copy()
         failed = modified.get("challenge_success") == False
+        weight = (
+            modified["penalty_weight"]
+            if "penalty_weight" in modified.columns
+            else pd.Series(1.0, index=modified.index)
+        )
         modified["penalty"] = 0.0
-        modified.loc[failed, "penalty"] = -((modified.loc[failed, "innings_remaining"]) / 9.0) * float(ev)
+        modified.loc[failed, "penalty"] = (
+            -((modified.loc[failed, "innings_remaining"]) / 9.0) * float(ev) * weight.loc[failed]
+        )
         modified["cRV"] = modified["delta_rv_pitch"] + modified["penalty"]
         rows.append(
             {
@@ -402,7 +409,8 @@ def build_challenge_wpa_summary(scored_df: pd.DataFrame, ev_c_win: float | None 
 
     inning = pd.to_numeric(df["inning"], errors="coerce").fillna(9).astype(int)
     innings_remaining = (9 - inning).clip(lower=0)
-    penalty = np.where(success, 0.0, -(innings_remaining / 9.0) * float(ev_c_win))
+    weight = df["penalty_weight"] if "penalty_weight" in df.columns else 1.0
+    penalty = np.where(success, 0.0, -(innings_remaining / 9.0) * float(ev_c_win) * weight)
 
     # Only successful overturns move win probability; failures carry the
     # penalty above and change nothing on the field.
@@ -413,4 +421,82 @@ def build_challenge_wpa_summary(scored_df: pd.DataFrame, ev_c_win: float | None 
         .agg(events=("_wpa", "size"), total_wpa=("_wpa", "sum"), mean_wpa=("_wpa", "mean"))
         .reset_index()
         .sort_values("total_wpa", ascending=False)
+    )
+
+
+def build_crv_success_correlation(scored_df: pd.DataFrame, min_challenges: int = 10) -> pd.DataFrame:
+    """Correlate player-level mean cRV with player challenge success rate.
+
+    If cRV were nearly redundant with accuracy, this correlation would sit
+    close to 1; a moderate value shows the metric carries leverage/timing
+    information that the raw success rate does not.
+    """
+    if scored_df is None or scored_df.empty or "player_name" not in scored_df.columns:
+        return pd.DataFrame(columns=["metric", "value"])
+
+    df = scored_df.copy()
+    df["_crv"] = pd.to_numeric(df["cRV"], errors="coerce").fillna(0.0)
+    df["_succ"] = pd.to_numeric(df["challenge_success"], errors="coerce").fillna(0).astype(float)
+    g = (
+        df.groupby("player_name")
+        .agg(n=("_crv", "size"), mean_crv=("_crv", "mean"), success_rate=("_succ", "mean"))
+        .query(f"n >= {min_challenges}")
+    )
+    if len(g) < 3:
+        return pd.DataFrame(columns=["metric", "value"])
+
+    r = float(g["mean_crv"].corr(g["success_rate"]))
+    rho = float(g["mean_crv"].corr(g["success_rate"], method="spearman"))
+    return pd.DataFrame(
+        [
+            {"metric": "Qualifying players", "value": float(len(g))},
+            {"metric": "Min challenges per player", "value": float(min_challenges)},
+            {"metric": "Pearson r (cRV vs success rate)", "value": r},
+            {"metric": "Spearman rho (cRV vs success rate)", "value": rho},
+        ]
+    )
+
+
+def build_split_half_reliability(scored_df: pd.DataFrame, min_challenges_per_half: int = 4) -> pd.DataFrame:
+    """Split-half reliability of player-level mean cRV within 2026.
+
+    Splits the season-to-date at its median game date and correlates each
+    player's mean cRV across the two halves. A substantial positive
+    correlation is evidence that challenge judgment is a stable skill rather
+    than noise.
+    """
+    if scored_df is None or scored_df.empty:
+        return pd.DataFrame(columns=["metric", "value"])
+    if "game_date" not in scored_df.columns or "player_name" not in scored_df.columns:
+        return pd.DataFrame(columns=["metric", "value"])
+
+    df = scored_df.copy()
+    df["_date"] = pd.to_datetime(df["game_date"], errors="coerce")
+    df = df.dropna(subset=["_date"])
+    if df.empty:
+        return pd.DataFrame(columns=["metric", "value"])
+
+    median_date = df["_date"].median()
+    df["_half"] = np.where(df["_date"] < median_date, "first", "second")
+    df["_crv"] = pd.to_numeric(df["cRV"], errors="coerce").fillna(0.0)
+
+    means = df.pivot_table(index="player_name", columns="_half", values="_crv", aggfunc="mean")
+    counts = df.pivot_table(index="player_name", columns="_half", values="_crv", aggfunc="count")
+    for half in ("first", "second"):
+        if half not in counts.columns:
+            counts[half] = 0
+    keep = (counts["first"] >= min_challenges_per_half) & (counts["second"] >= min_challenges_per_half)
+    means = means.loc[keep].dropna()
+    if len(means) < 3:
+        return pd.DataFrame(columns=["metric", "value"])
+
+    r = float(means["first"].corr(means["second"]))
+    rho = float(means["first"].corr(means["second"], method="spearman"))
+    return pd.DataFrame(
+        [
+            {"metric": "Qualifying players", "value": float(len(means))},
+            {"metric": "Min challenges per half", "value": float(min_challenges_per_half)},
+            {"metric": "Pearson r (split-half cRV)", "value": r},
+            {"metric": "Spearman rho (split-half cRV)", "value": rho},
+        ]
     )

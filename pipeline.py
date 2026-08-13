@@ -10,9 +10,11 @@ import pandas as pd
 try:
     from .analysis import (
         build_challenge_wpa_summary,
+        build_crv_success_correlation,
         build_ev_sensitivity,
         build_leverage_summary,
         build_re288_sample_summary,
+        build_split_half_reliability,
         build_validation_summary,
         default_ev_grid,
         estimate_ev_c_empirical,
@@ -26,9 +28,11 @@ try:
 except ImportError:  # pragma: no cover - allows running as script from repo root
     from analysis import (
         build_challenge_wpa_summary,
+        build_crv_success_correlation,
         build_ev_sensitivity,
         build_leverage_summary,
         build_re288_sample_summary,
+        build_split_half_reliability,
         build_validation_summary,
         default_ev_grid,
         estimate_ev_c_empirical,
@@ -386,6 +390,12 @@ def run_experiment(
     challenge_wpa_summary = build_challenge_wpa_summary(scored)
     challenge_wpa_summary.to_csv(output_dir / "challenge_wpa_summary.csv", index=False)
 
+    crv_success_corr = build_crv_success_correlation(scored)
+    crv_success_corr.to_csv(output_dir / "crv_success_correlation.csv", index=False)
+
+    split_half_reliability = build_split_half_reliability(scored)
+    split_half_reliability.to_csv(output_dir / "split_half_reliability.csv", index=False)
+
     # Parse-quality summary for event isolation validation
     if "parse_quality" in scored.columns:
         parse_summary = (
@@ -460,6 +470,12 @@ def run_experiment(
         out_path=tables_dir / "challenge_wpa_summary.tex",
         caption="Realized win-probability swing of successful overturns by role.",
         label="tab:cwpa",
+    )
+    _write_latex_table(
+        pd.concat([crv_success_corr, split_half_reliability], ignore_index=True),
+        out_path=tables_dir / "metric_information.tex",
+        caption="Information and reliability of player-level cRV.",
+        label="tab:info",
     )
 
     empirical_ev_c = _metric_value(ev_c_estimate, "Empirical EV_c")

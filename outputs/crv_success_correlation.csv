@@ -1,0 +1,5 @@
+metric,value
+Qualifying players,47.0
+Min challenges per player,10.0
+Pearson r (cRV vs success rate),0.723236179209481
+Spearman rho (cRV vs success rate),0.6777181804951969

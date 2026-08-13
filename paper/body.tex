@@ -51,8 +51,8 @@ against an empirically estimated RE288 surface.
         August 12---$1{,}971$ plate-appearance-ending challenges scored against
         an empirically estimated RE288 matrix---that
         quantifies the run value of the challenge as used in practice and shows
-        catchers extract more than three times the per-challenge value of
-        batters (Section~\ref{sec:results}).
+        catchers extract roughly two-and-a-half times the per-challenge value
+        of batters (Section~\ref{sec:results}).
 \end{enumerate}
 
 \section{Related work}
@@ -73,11 +73,18 @@ challenge should be spent and \emph{whether} spending it paid off. Framing runs
 and $cRV$ are complementary rather than competing---in a full-ABS world the
 former decays toward zero while the latter becomes the live skill.
 
-Broader work on umpiring-context effects and decision incentives in sport
-\citep{scorecasting} motivates treating challenge usage as a constrained
-optimization problem rather than a pure accuracy skill. The opportunity-cost
-structure in $cRV$ is a deliberately simple instance of that framing: a
-resource with option value that decays as the game shortens.
+The strategic problem of \emph{when} to spend a scarce, retained-on-success
+review resource has an established economics and operations-research
+literature. Abramitzky et al.\ \citep{abramitzky2012} characterize optimal
+Hawk-Eye line-call challenge behavior in professional tennis; Clarke and
+Norman \citep{clarkenorman2012} solve the challenge decision as a dynamic
+program; and Shivakumar \citep{shivakumar2018} documents strategic review use
+in cricket's Decision Review System, whose ``retained on success'' rule
+mirrors ABS. Broader work on umpiring-context effects and decision incentives
+in sport \citep{scorecasting} frames the same problem at the behavioral level.
+Our opportunity-cost penalty is a deliberately simple approximation to the
+option value these dynamic-program treatments compute exactly; Section
+\ref{sec:limitations} returns to the gap between the two.
 
 \section{Methodology}
 \label{sec:method}
@@ -126,7 +133,7 @@ proceeds from the original reality.
 \subsection{Opportunity-cost penalty}
 Let $EV_c$ be the baseline expected value of \emph{retaining} a challenge. In
 v1 we fix $EV_c = 0.15$ runs as a transparent constant; Section
-\ref{sec:sensitivity} reports sensitivity over $[0.05, 0.30]$. Conceptually,
+\ref{sec:sensitivity} reports sensitivity over $[0.034, 0.30]$. Conceptually,
 \begin{align}
 EV_c = P(\text{future need}) \times P(\text{win}) \times
        \overline{\Delta RV}_{\text{late}},
@@ -147,24 +154,39 @@ results that follow are computed under a deliberately conservative $EV_c$.
 
 Failed challenges incur
 \begin{align}
-Penalty_i = -\left(\frac{\max(0,\, 9 - \mathrm{inning}_i)}{9}\right) EV_c.
+Penalty_i = -\left(\frac{\max(0,\, 9 - \mathrm{inning}_i)}{9}\right)
+            \frac{EV_c}{C_i},
 \label{eq:penalty}
 \end{align}
+where $C_i$ is the number of challenges the team held immediately before the
+failure. The penalty prices the opportunity cost of the challenge the failure
+destroys: each team enters the game with a two-challenge budget
+\citep{mlbabs2026}---a failure consumes one, a success retains it---so losing
+the \emph{last} challenge forfeits the entire retained option value, while
+losing one of two forfeits only a $1/C$ share. In the 2026 corpus, $973$ of
+the $1{,}055$ failed challenges were the team's first failure of the game
+($C_i = 2$, a half charge) and $82$ were its last ($C_i = 1$, a full charge).
 
-Three properties of Equation~\ref{eq:penalty} deserve comment. First,
+Four properties of Equation~\ref{eq:penalty} deserve comment. First,
 successful challenges are retained under ABS rules \citep{mlbabs2026}, so $Penalty_i = 0$ on
-wins---the resource was not consumed. Second, the penalty is \emph{linearly
-decaying} in the inning: a failed first-inning challenge forfeits eight innings
-of option value and is charged $-(8/9)EV_c$, whereas a failed ninth-inning
-challenge forfeits nothing and is charged zero. Third, extra innings floor at
-zero via the $\max(0,\cdot)$ term, consistent with inning-level challenge
-resets.
+wins---the resource was not consumed. Second, the penalty conditions on the
+actual scarce resource: a failure with a reserve challenge still in hand
+($C_i = 2$) is charged half of one with none in reserve ($C_i = 1$), because
+what is destroyed is the marginal challenge, not the whole stock. Third, the
+penalty is \emph{linearly decaying} in the inning: a failed first-inning
+challenge forfeits eight innings of option value and is charged
+$-(8/9) \times EV_c/C_i$, whereas a failed ninth-inning challenge forfeits
+nothing and is charged zero. Fourth, extra innings floor at zero via the
+$\max(0,\cdot)$ term, consistent with inning-level challenge resets.
 
-The linear decay is a modeling choice, not a derived result. It is the
-simplest functional form with the correct boundary behavior (maximal early,
-zero at game end), and it avoids introducing free parameters that the current
-data cannot identify. A convex decay---reflecting that late innings are more
-leveraged per inning than early ones---is a plausible refinement.
+Both the linear decay and the $1/C$ share are modeling choices, not derived
+results: they are the simplest forms with the correct boundary behavior, and
+they avoid free parameters the current data cannot identify. The full
+solution---which the tennis and cricket challenge literature obtains by
+dynamic programming \citep{abramitzky2012,clarkenorman2012,shivakumar2018}---would
+price the marginal value of the $k$-th challenge and the option value of
+challenges held. A convex decay, reflecting that late innings are more
+leveraged per inning than early ones, is a plausible refinement.
 
 \subsection{Unified metric}
 \begin{align}
@@ -216,9 +238,9 @@ The practical consequence is severe. Under the old treatment, a bases-loaded
 walk conversion scores $\Delta RV = 0$ instead of the $+1.91$ runs it is
 actually worth, and an inning-ending strikeout conversion scores $0$ instead of
 $+1.72$. On the 2026 terminal-challenge corpus (Section~\ref{sec:results}), zeroing terminal
-states drives mean $cRV$ to $-0.031$---the metric reports that challenging is,
+states drives mean $cRV$ to $-0.016$---the metric reports that challenging is,
 on net, \emph{harmful}, because only the penalties survive. With terminal states
-valued correctly, mean $cRV$ is $+0.145$. The sign of the headline result flips
+valued correctly, mean $cRV$ is $+0.159$. The sign of the headline result flips
 on this one modeling decision, and it flips on real data, not just a
 constructed example.
 
@@ -344,13 +366,13 @@ from the same season's play-by-play ($EV_c = 0.15$). All artifacts live in
 
 \input{../outputs/tables/validation_summary.tex}
 
-Mean $cRV$ is $0.145$ runs per challenge, with a game-clustered bootstrap
-$95\%$ CI of $[0.132,\,0.157]$---comfortably above zero, so the challenge as
+Mean $cRV$ is $0.159$ runs per challenge, with a game-clustered bootstrap
+$95\%$ CI of $[0.147,\,0.172]$---comfortably above zero, so the challenge as
 actually used in 2026 added run value on net within this terminal-challenge
-census. Part of that positivity is structural rather than behavioral: every
-success scores an unbounded positive delta while every failure is charged only
-a penalty bounded by $EV_c$, so the metric rewards overturns more than it
-punishes misses (Section~\ref{sec:limitations}). The overall success rate is
+census. A positive mean is the expected-value answer for the challenge system,
+not a scoring artifact: a successful overturn realizes a positive run swing,
+while a failure is charged only the opportunity cost of the challenge it
+destroyed (Section~\ref{sec:limitations}). The overall success rate is
 $46.5\%$. At $n = 1{,}971$ the interval is tight, a marked contrast to the wide
 bands a small validation corpus would produce, and it is narrow enough to
 support role- and leverage-level comparisons rather than only a directional
@@ -366,8 +388,8 @@ one the framework predicts: value is concentrated in terminal-state conversions,
 while failures contribute a thin band of small negative values whose magnitude
 is set entirely by inning. The role split is the headline empirical finding.
 Batters and catchers issue challenges in almost equal numbers ($985$ versus
-$984$), but catchers accumulate $219.3$ runs of $cRV$ to the batters' $65.7$---a
-per-challenge mean of $0.223$ against $0.067$. This comparison is
+$984$), but catchers accumulate $227.6$ runs of $cRV$ to the batters' $86.7$---a
+per-challenge mean of $0.231$ against $0.088$. This comparison is
 descriptive, not causal: catchers and batters issue challenges in structurally
 different spots (converting two-strike takes into outs versus avoiding called
 third strikes), so it does not by itself identify superior judgment. Catchers
@@ -378,6 +400,22 @@ continuation of the at-bat.
 \crvfigure{fig:leaderboard}{leaderboard_top10}{0.9}
 
 \crvfigure{fig:challenger}{challenger_totals}{0.8}
+
+\subsection{Information and reliability}
+Two checks bear on whether $cRV$ measures anything beyond raw accuracy, and
+whether it is stable enough to be a skill rather than noise
+(Table~\ref{tab:info}). First, across the $47$ players with at least $10$
+challenges, mean $cRV$ correlates $0.72$ (Pearson) and $0.68$ (Spearman) with
+challenge success rate. Accuracy explains roughly half the variance, but the
+remaining half is leverage and timing---the information the run-denominated
+metric adds over a success-rate ranking. Second, split-half reliability within
+2026 is weaker: for the $45$ players with at least four challenges in each half
+of the season, mean $cRV$ in the first half correlates $0.34$ (Pearson) with
+the second half. Player-level $cRV$ is therefore only modestly stable within a
+half-season, consistent with a young, sparse sample; the run-denominated
+ordering is robust in aggregate but not yet a per-player skill signal.
+
+\input{../outputs/tables/metric_information.tex}
 
 \subsection{Case studies}
 Three events illustrate the model's economic content. Each is traced from
@@ -411,27 +449,29 @@ Catcher delta: $1.721 - 0 = 1.721$ runs. This is exactly the case the old
 zero-everything treatment got most wrong: it scored the inning-ending
 conversion---erasing a run already in and ending the threat---at zero.
 
-\paragraph{Early failed challenge (Carter Jensen, catcher, $-0.13$).}
-A first-inning failed catcher challenge yields $\Delta RV = 0$ and
-$Penalty = -(8/9) \times 0.15 \approx -0.133$. Compare any ninth-inning
-failure, which yields exactly $0.00$ because no innings of option value remain.
-Same outcome, same accuracy, but the early challenge is charged eight-ninths of
-$EV_c$ and the late one nothing---the resource-management incentive the
-framework exists to encode.
+\paragraph{Early failed challenge (Carter Jensen, catcher, $-0.07$).}
+A first-inning failed catcher challenge---the team's first failure, so two
+challenges were still held---yields $\Delta RV = 0$ and
+$Penalty = -(8/9) \times 0.15 \times (1/2) \approx -0.067$. Had it been the
+team's last challenge the charge would double to $-0.133$, and any ninth-inning
+failure yields exactly $0.00$ because no innings of option value remain. Same
+outcome and accuracy, but the price depends on both how much game remains and
+how much of the challenge budget survives---the resource-management incentive
+the framework exists to encode.
 
 \subsection{Leverage stratification}
 \input{../outputs/tables/leverage_summary.tex}
 
 Total value tracks event count: the late bucket (innings 7--9) carries the most
-challenges ($735$) and the largest aggregate ($102.5$ runs), followed by mid
-($631$ events, $97.7$) and early ($578$ events, $81.0$), with a small extra-inning
-tail ($27$ events, $3.8$). What is striking is how flat the \emph{mean} is across
-buckets---$0.139$, $0.155$, $0.140$, and $0.139$ runs respectively. The
-opportunity-cost penalty makes an early failure costlier than a late one, but
-that term touches only the $53.5\%$ of challenges that fail, and the terminal
-conversions that dominate the numerator occur in every inning. The net effect is
-that per-challenge value is nearly constant across the game while total value
-accumulates wherever challenges are most frequent.
+challenges ($735$, $105.6$ runs), followed by mid ($631$ events, $108.0$) and
+early ($578$ events, $97.0$), with a small extra-inning tail ($27$ events,
+$3.8$). The \emph{mean} is mildly higher early and mid-game than late---$0.168$,
+$0.171$, $0.144$, and $0.139$ runs respectively. Two forces pull against each
+other: the inning decay makes an early failure costlier, but the scarcity
+weight makes a team's \emph{first} failure---disproportionately early---only
+half as costly as its last. Terminal conversions dominate the numerator in
+every inning, so per-challenge value stays within a narrow band while total
+value accumulates wherever challenges are most frequent.
 
 \subsection{Sensitivity to $EV_c$}
 \label{sec:sensitivity}
@@ -439,12 +479,12 @@ accumulates wherever challenges are most frequent.
 
 \crvfigure{fig:sensitivity}{ev_sensitivity}{0.85}
 
-Total corpus $cRV$ ranges from $332.3$ runs at the empirical $EV_c = 0.034$ to
-$223.9$ runs at $EV_c = 0.30$ (Figure~\ref{fig:sensitivity}), a spread of
-$108.4$ runs across the grid, with the mean falling from $0.169$ to $0.114$.
+Total corpus $cRV$ ranges from $338.9$ runs at the empirical $EV_c = 0.034$ to
+$282.6$ runs at $EV_c = 0.30$ (Figure~\ref{fig:sensitivity}), a spread of
+$56.2$ runs across the grid, with the mean falling from $0.172$ to $0.143$.
 The relationship is exactly linear: from Equation~\ref{eq:penalty},
 $\sum_i cRV_i = \sum_i \Delta RV_i - EV_c \sum_{i \in \text{fail}}
-(9 - \mathrm{inning}_i)/9$, and only the second term depends on $EV_c$.
+(9 - \mathrm{inning}_i)/(9\,C_i)$, and only the second term depends on $EV_c$.
 
 Two conclusions follow. First, because $cRV$ is monotone nonincreasing in
 $EV_c$ (only the penalty depends on it), the positive sign of mean $cRV$ holds
@@ -468,9 +508,9 @@ Equation~\ref{eq:penalty}, with the retained-challenge value now measured in
 win probability: $0.0025$ win probability per retained challenge, estimated
 from the same three-factor decomposition as the run version
 (Table~\ref{tab:evcwin}). The resulting cWPA preserves the run-denominated
-ordering: catchers accumulate $+14.8$ win probability ($0.0150$ per challenge)
-to batters' $+5.0$ ($0.0051$ per challenge; Table~\ref{tab:cwpa}), the same
-catcher dominance found in runs, for a corpus total of $+19.7$ win probability
+ordering: catchers accumulate $+14.9$ win probability ($0.0151$ per challenge)
+to batters' $+5.3$ ($0.0054$ per challenge; Table~\ref{tab:cwpa}), the same
+catcher dominance found in runs, for a corpus total of $+20.2$ win probability
 (Figure~\ref{fig:cwpa}).
 
 \input{../outputs/tables/ev_c_win_estimate.tex}
@@ -483,13 +523,14 @@ catcher dominance found in runs, for a corpus total of $+19.7$ win probability
 \subsection{Managerial implications}
 Under this framework, challenging a borderline strike on an 0--0 count is
 rarely justified. The count move (0--1 $\to$ 1--0) is worth roughly $0.07$
-runs in our surface, while a first-inning miss costs $-(8/9) \times 0.15
-\approx -0.13$ runs under the baseline $EV_c$. Break-even therefore requires a
-win probability above roughly 65\%---higher than typical challenge success
-rates. Under the empirical $EV_c = 0.034$ the first-inning penalty shrinks to
-$-0.03$ runs and break-even falls to about 30\%, so the strength of this
-recommendation turns on which $EV_c$ one trusts. The asymmetry only worsens
-earlier in the game.
+runs in our surface, while a first-inning miss costs $-(8/9) \times 0.15 / C$---
+about $-0.07$ runs if it is the team's first failure ($C = 2$) and $-0.13$ if
+it is the last ($C = 1$) under the baseline $EV_c$. Break-even therefore
+requires a win probability of roughly $49\%$ to $65\%$, depending on how much
+of the challenge budget remains---higher than typical challenge success rates.
+Under the empirical $EV_c = 0.034$ those first-inning penalties shrink to
+$-0.015$ and $-0.03$ runs, and break-even falls to about $18\%$--$30\%$, so
+the strength of this recommendation turns on which $EV_c$ one trusts.
 
 By contrast, full-count terminal challenges---especially with runners on and
 two outs---can swing between half a run and a run and a half of expectancy.
@@ -546,23 +587,29 @@ to avoid double-counting pitches that were framed \emph{and} challenged.
         multi-season pooling would stabilize them.
   \item \textbf{Sample size and selection.} $n = 1{,}971$ is a season-to-date
         census of terminal challenges, not a random sample. The bootstrap
-        interval $[0.132,\,0.157]$ reflects resampling variability within that
+        interval $[0.147,\,0.172]$ reflects resampling variability within that
         census, not sampling from a larger population, and the reported mean is
         an average over the highest-leverage subset of challenges.
-  \item \textbf{Asymmetric scoring rule.} Successful challenges score an
-        unbounded positive pitch delta while failures are charged a penalty
-        bounded by $EV_c$. The positive mean $cRV$ is therefore partly a
-        consequence of this asymmetry rather than of decision quality: a
-        no-skill challenger would still post a positive mean under the rule.
-        The metric is a descriptive valuation, not a causal measure of skill.
+  \item \textbf{Opportunity-cost specification.} The retained-challenge
+        penalty (Equation~\ref{eq:penalty}) conditions on innings remaining and
+        on the number of challenges held before a failure (a $1/C$ share), but
+        it is a first-order approximation, not the full dynamic program solved
+        in the tennis and cricket challenge literature
+        \citep{abramitzky2012,clarkenorman2012,shivakumar2018}. A positive mean
+        $cRV$ is nonetheless the expected-value answer---a successful overturn
+        realizes a positive run swing while a failure is charged the
+        opportunity cost of the challenge it destroyed---rather than an
+        artifact of an asymmetric scoring rule.
   \item \textbf{Fixed $EV_c$.} The baseline challenge value is fixed at
         $0.15$ runs for the headline results. The empirical estimate ($0.034$
         runs) is about a quarter of that, so the headline results are
         conservative; Section~\ref{sec:sensitivity} bounds the model risk
         across both values and beyond.
-  \item \textbf{Linear decay assumption.} The penalty decays linearly in
-        innings remaining. This has correct boundary behavior but no empirical
-        justification; a convex decay may better reflect late-inning leverage.
+  \item \textbf{Decay and share assumptions.} The penalty decays linearly in
+        innings remaining and divides by the number of challenges held. Both
+        have correct boundary behavior but no empirical justification; a convex
+        decay, or a data-driven marginal value for the $k$-th challenge, may
+        better reflect late-inning leverage and option value.
   \item \textbf{Parse ambiguity.} Role inference from free-text descriptions
         can fail ($2$ of $1{,}971$ events). Production feeds with
         structured challenge flags would eliminate this.
@@ -572,8 +619,10 @@ to avoid double-counting pitches that were framed \emph{and} challenged.
         overturns and their penalty in win probability, but it leans on
         Statcast's pitch-level win-expectancy swings rather than a full
         leverage-index model of challenge value.
-  \item \textbf{Challenges held are unpriced.} The metric values challenges
-        spent, not the deterrent or option value of challenges retained.
+  \item \textbf{Challenges held are partially priced.} The penalty charges the
+        $1/C$ share of the challenge a failure destroys, but it does not price
+        the option value of challenges retained for future use, nor the
+        deterrent effect a holding team exerts on an opponent.
 \end{itemize}
 
 \section{Future work}
@@ -588,14 +637,15 @@ Immediate priorities, roughly in dependency order:
         sizes, flagging low-$n$ states as unstable.
   \item Validate description parsers against official ABS game logs and
         quantify false-positive and false-negative rates.
-  \item Refine the empirical $EV_c$ estimate with a multi-season baseline and
-        an explicit option-value model, rather than the static three-factor
-        product.
-  \item Test the linear-decay assumption against an empirically estimated
-        option-value curve.
-  \item Add year-over-year stability and split-half reliability analysis for
-        player $cRV$, to establish whether challenge judgment is a skill or
-        noise.
+  \item Replace the static three-factor $EV_c$ estimate and the $1/C$ share
+        with the full dynamic program of the tennis and cricket challenge
+        literature \citep{abramitzky2012,clarkenorman2012,shivakumar2018},
+        which prices the marginal value of the $k$-th challenge and the option
+        value of challenges held.
+  \item Extend the within-season split-half reliability check (currently
+        $r \approx 0.34$) across multiple seasons and larger per-player
+        samples, to establish whether player $cRV$ stabilizes into a skill
+        signal.
   \item Explore dynamic $P(\text{win})$ conditioned on pitch location and
         historical umpire/ABS agreement rates, enabling a prospective
         ``should you challenge this?'' model rather than a retrospective score.
@@ -614,7 +664,7 @@ a distinction invisible to raw success rates.
 The methodological finding we would most emphasize is the terminal-outcome
 treatment. Plate-appearance-ending challenges are simultaneously the most
 common high-leverage challenges and the easiest to model incorrectly; on the
-2026 terminal-challenge corpus, zeroing them turns a mean $cRV$ of $+0.145$ into $-0.031$,
+2026 terminal-challenge corpus, zeroing them turns a mean $cRV$ of $+0.159$ into $-0.016$,
 inverting the sign of the headline result. Any future implementation of a
 challenge-valuation metric should treat walk force chains and strikeout out
 increments as first-class cases, not edge cases.
@@ -624,7 +674,7 @@ regenerable from a single command, with provenance tracking that records
 whether each run drew on live Statcast data or the synthetic validation corpus.
 Applied to the $1{,}971$ plate-appearance-ending challenges recoverable from
 the 2026 season, it establishes catchers as the
-dominant beneficiaries of the ABS challenge and terminal conversions as the
+primary beneficiaries of the ABS challenge and terminal conversions as the
 events that carry the metric.
 
 \appendix

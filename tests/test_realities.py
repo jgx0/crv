@@ -128,6 +128,47 @@ def test_failed_challenge_extra_innings_zero_penalty():
     assert float(scored.iloc[0]["cRV"]) == 0.0
 
 
+def test_failed_challenges_weight_by_remaining_stock():
+    # Two failures by the same team in one game: the first forfeits a 1/2 share
+    # (two challenges held), the second a full share (last challenge).
+    df = pd.DataFrame(
+        [
+            {"game_pk": 1, "inning": 1, "inning_topbot": "Bot", "home_team": "A", "away_team": "B",
+             "challenger_type": "catcher", "challenge_success": False,
+             "at_bat_number": 1, "pitch_number": 1, "RE_Reality": 0.5, "RE_Challenge": 0.5},
+            {"game_pk": 1, "inning": 2, "inning_topbot": "Bot", "home_team": "A", "away_team": "B",
+             "challenger_type": "catcher", "challenge_success": False,
+             "at_bat_number": 2, "pitch_number": 1, "RE_Reality": 0.5, "RE_Challenge": 0.5},
+        ]
+    )
+    scored = calculate_crv(df)
+    assert float(scored.iloc[0]["penalty_weight"]) == 0.5
+    assert float(scored.iloc[1]["penalty_weight"]) == 1.0
+    assert abs(float(scored.iloc[0]["penalty"]) - (-(8 / 9) * 0.15 * 0.5)) < 1e-9
+    assert abs(float(scored.iloc[1]["penalty"]) - (-(7 / 9) * 0.15)) < 1e-9
+
+
+def test_success_does_not_consume_challenge_budget():
+    # A successful challenge (event 1) does not shrink the stock, so the first
+    # failure that follows it (event 2) still forfeits only a 1/2 share.
+    df = pd.DataFrame(
+        [
+            {"game_pk": 1, "inning": 1, "inning_topbot": "Bot", "home_team": "A", "away_team": "B",
+             "challenger_type": "catcher", "challenge_success": True,
+             "at_bat_number": 1, "pitch_number": 1, "RE_Reality": 0.5, "RE_Challenge": 0.5},
+            {"game_pk": 1, "inning": 2, "inning_topbot": "Bot", "home_team": "A", "away_team": "B",
+             "challenger_type": "catcher", "challenge_success": False,
+             "at_bat_number": 2, "pitch_number": 1, "RE_Reality": 0.5, "RE_Challenge": 0.5},
+            {"game_pk": 1, "inning": 3, "inning_topbot": "Bot", "home_team": "A", "away_team": "B",
+             "challenger_type": "catcher", "challenge_success": False,
+             "at_bat_number": 3, "pitch_number": 1, "RE_Reality": 0.5, "RE_Challenge": 0.5},
+        ]
+    )
+    scored = calculate_crv(df)
+    assert float(scored.iloc[1]["penalty_weight"]) == 0.5
+    assert float(scored.iloc[2]["penalty_weight"]) == 1.0
+
+
 def test_filter_challenge_events_parses_roles_and_calls():
     # Grammar taken verbatim from 2026 Statcast `des` text. Note that
     # `description` holds the call AFTER the challenge resolves, so the
