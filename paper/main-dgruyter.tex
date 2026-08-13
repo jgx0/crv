@@ -19,6 +19,16 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[big,online]{dgruyter}
+
+% dgruyter.sty forces two-sided layout under the article class, so odd and
+% even pages get different gutter margins (18mm vs ~37mm). Switch back to
+% one-sided so every page shares the odd-page margin and header, giving a
+% uniform preview PDF. (The publisher re-typesets from source; this only
+% affects our local reference build.)
+\makeatletter
+\@twosidefalse
+\makeatother
+
 \usepackage{lmodern}
 \usepackage{microtype}
 \usepackage[round,authoryear]{natbib}
