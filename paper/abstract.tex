@@ -1,0 +1,24 @@
+We introduce Challenge Run Value ($cRV$), a pitch-level metric for valuing
+Automated Ball-Strike (ABS) challenges in Major League Baseball. Unlike
+framing metrics, which measure physical receiving skill under human umpiring,
+$cRV$ treats the challenge as a scarce strategic resource whose value depends
+on when it is spent, whether it succeeds, and which future options it
+forgoes. The model combines run-expectancy deltas from count- and
+plate-appearance-ending state changes with a time-decaying, scarcity-weighted
+penalty for failed challenges, calibrated against an empirically derived
+RE288 run-expectancy surface built from public Statcast data. A central
+methodological contribution is the valuation of terminal outcomes: challenges
+that convert a called strike three into ball four (or the reverse) end the
+plate appearance and must be priced from the resulting base/out state and
+runs scored rather than zeroed. We implement a reproducible five-module
+pipeline (ingestion, event isolation, alternate-state generation, RE288
+mapping, and scoring) with game-clustered bootstrap uncertainty, leverage
+stratification, and sensitivity analysis. Applying the model to the $1{,}971$
+plate-appearance-ending challenges recoverable from the 2026 regular season
+through August 12, we estimate a mean $cRV$ of $0.159$ runs per challenge
+($95\%$ CI $[0.147,\,0.172]$); catchers generate roughly two-and-a-half times
+the per-challenge value of batters ($0.231$ versus $0.088$). Zeroing terminal
+states would instead drive the aggregate negative ($-0.016$), inverting the
+sign of the result. The metric gives teams a principled basis for deciding
+when to spend a scarce challenge and for separating high-leverage conversion
+skill from reckless early usage.
