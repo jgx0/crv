@@ -1,19 +1,14 @@
 % =====================================================================
-%  Journal of Quantitative Analysis in Sports -- SUBMISSION manuscript
+%  Double-spaced submission manuscript (de-identified for blind review).
 %
-%  Formatted to the JQAS "Manuscript Preparation Guidelines":
-%    * 8.5 x 11 in paper, 1 in margins, single column
-%    * 12 pt Unicode font, double-spaced (~26 lines/page)
-%    * de-identified for blind review (no author, no affiliation, no repo URL)
-%    * abstract ~200 words, 3-6 keywords absent from the title
-%    * Harvard (author-date) references
-%    * figures NOT embedded: cited in order, supplied as separate EPS/TIF,
-%      with legends collected on their own pages
+%  Format: 8.5 x 11 in paper, 1 in margins, single column, 12 pt, double
+%  spaced; Harvard (author-date) references; figures cited in order with
+%  legends collected on their own pages.
 %
 %  Build:
 %    make paper            -> submission copy (figures external)
 %    make paper-review     -> same text with figures inlined, for reading
-%  The typeset De Gruyter version lives in main-dgruyter.tex (post-acceptance).
+%  A typeset preprint version lives in main-dgruyter.tex.
 % =====================================================================
 \documentclass[12pt]{article}
 \usepackage[letterpaper,margin=1in]{geometry}
@@ -50,7 +45,7 @@
 % \crvfigure{label}{file}{width}: inlines the graphic in the review build,
 % emits an "[Figure N about here]" marker in the submission build. Either way
 % the figure is numbered and \ref-able, and the legend text lives once, in the
-% Figure Legends section, per the JQAS legend-on-separate-pages rule.
+% Figure Legends section, per the legend-on-separate-pages rule.
 \newcommand{\crvfigure}[3]{%
   \ifreview
     \begin{figure}[htbp]
@@ -76,7 +71,7 @@
 \title{Challenge Run Value ($cRV$): quantifying strategic value\\in MLB's ABS challenge era}
 
 % De-identified for blind review. Author, affiliation, and repository details
-% are supplied through ScholarOne, not in the manuscript file.
+% are omitted from the manuscript file.
 \author{}
 \date{}
 

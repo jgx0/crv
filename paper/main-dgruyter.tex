@@ -1,19 +1,12 @@
 % =====================================================================
-%  POST-ACCEPTANCE typeset version -- De Gruyter / JQAS house style.
+%  Typeset preprint version (single-column, professional layout).
 %
-%  This is NOT the file to submit. JQAS reviews blind, on 8.5x11 double-
-%  spaced pages; that copy is main.tex. This one uses the publisher's
-%  dgruyter.sty to preview how the article sets in the journal, and it
-%  carries the author identity that main.tex deliberately omits.
-%
-%  Both documents \input the same body.tex, so the prose cannot drift
-%  between them -- only the front matter and page geometry differ.
+%  This build carries the author identity and is suitable for posting as a
+%  preprint or sharing with readers. The double-spaced submission copy is
+%  main.tex. Both documents \input the same body.tex, so the prose cannot
+%  drift between them -- only the front matter and page geometry differ.
 %
 %  Build:  make paper-dgruyter
-%
-%  Before sending to production, fill in the \received/\revised/\accepted
-%  dates, volume, issue, and DOI supplied by the editorial office, and
-%  restore the real author block below.
 % =====================================================================
 \documentclass[USenglish]{article}
 
@@ -23,10 +16,12 @@
 % dgruyter.sty forces two-sided layout under the article class, so odd and
 % even pages get different gutter margins (18mm vs ~37mm). Switch back to
 % one-sided so every page shares the odd-page margin and header, giving a
-% uniform preview PDF. (The publisher re-typesets from source; this only
-% affects our local reference build.)
+% uniform preview PDF.
+% The package also places the publisher's wordmark in the running header;
+% we empty that box so the preprint carries no publisher branding.
 \makeatletter
 \@twosidefalse
+\AtBeginDocument{\setbox\dg@wordmark=\hbox{}}
 \makeatother
 
 \usepackage{lmodern}
@@ -38,7 +33,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 
-\bibliographystyle{agsm}   % Harvard author-date, as JQAS requires
+\bibliographystyle{agsm}   % Harvard author-date
 
 % Macros shared with main.tex via body.tex.
 \input{preamble-shared}
@@ -55,20 +50,6 @@
   \end{figure}}
 
 \begin{document}
-
-%%%--------------------------------------------%%%
-  \articletype{Research Article}
-  \received{Month DD, YYYY}
-  \revised{Month DD, YYYY}
-  \accepted{Month DD, YYYY}
-  \journalname{Journal of Quantitative Analysis in Sports}
-  \journalyear{YYYY}
-  \journalvolume{XX}
-  \journalissue{X}
-  \startpage{1}
-  \aop
-  \DOI{10.1515/jqas-YYYY-XXXX}
-%%%--------------------------------------------%%%
 
 \title{Challenge Run Value ($cRV$): quantifying strategic value in MLB's ABS
 challenge era}
@@ -111,10 +92,6 @@ this manuscript are computed from the 2026 regular-season challenge corpus
 through August 12 ($n = 1{,}971$) extracted from those feeds. The deterministic synthetic
 validation corpus described in Section~\ref{sec:validation} is retained as an
 offline correctness harness and is regenerable from the accompanying code.
-
-\begin{acknowledgement}
-  TODO(post-acceptance): restore acknowledgments here.
-\end{acknowledgement}
 
 \begin{funding}
   No external funding supported this work.
